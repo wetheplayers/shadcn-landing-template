@@ -1,0 +1,28 @@
+# Development Dockerfile for Next.js with hot reload
+
+FROM node:20-alpine
+
+# Add libc6-compat for Alpine compatibility
+RUN apk add --no-cache libc6-compat
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install all dependencies (including devDependencies)
+RUN npm ci && \
+    npm cache clean --force
+
+# Copy application source
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Set environment to development
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Start development server with hot reload
+CMD ["npm", "run", "dev"]

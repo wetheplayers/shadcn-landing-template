@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Environment files
+.env*
+
+# Type definitions
+*.d.ts
+
+# Generated files
+next-env.d.ts
+
+# Coverage
+coverage/
+
+# Public assets
+public/ 

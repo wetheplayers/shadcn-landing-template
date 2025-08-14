@@ -1,0 +1,70 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js
+.next
+out
+dist
+
+# Testing
+coverage
+.nyc_output
+
+# Environment files
+.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Documentation
+*.md
+docs
+LICENSE
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+jenkins
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Development files
+.eslintrc*
+.prettierrc*
+jest.config.*
+tsconfig.tsbuildinfo
+*.log
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.temp
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Build artifacts
+*.tsbuildinfo
