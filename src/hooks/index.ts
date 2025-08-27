@@ -27,3 +27,15 @@ export {
 
 // Performance hooks
 export { usePerformance, useRenderPerformance, useApiPerformance } from './use-performance';
+
+// Optimization hooks
+export {
+  useVirtualization,
+  useDebounceAdvanced,
+  useThrottle,
+  useIntersectionObserverAdvanced,
+  useMemoizedValue,
+  useCancellableOperation,
+  useShallowEqual,
+  useBatchedState,
+} from './use-optimization';

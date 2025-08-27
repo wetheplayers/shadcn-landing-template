@@ -54,6 +54,9 @@ describe('usePerformance', () => {
   });
 
   it('handles missing PerformanceObserver gracefully', () => {
+    // Mock console.warn to avoid noise in tests
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    
     // @ts-ignore - Mocking missing PerformanceObserver
     global.PerformanceObserver = undefined;
     
@@ -66,6 +69,8 @@ describe('usePerformance', () => {
       cls: null,
       ttfb: null,
     });
+    
+    consoleSpy.mockRestore();
   });
 });
 

@@ -12,6 +12,9 @@ global.performance = {
 describe('useApi', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Mock fetch to return proper Response objects
+    global.fetch = jest.fn();
   });
 
   it('fetches data successfully', async () => {
