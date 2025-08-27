@@ -122,7 +122,7 @@ class UserService extends ApiService {
         throw new Error('Failed to upload avatar');
       }
 
-      const data = await response.json();
+      const data = await response.json() as { avatarUrl: string };
       return data.avatarUrl;
     } catch (error) {
       console.error(`Failed to upload avatar for user ${id}:`, error);

@@ -62,6 +62,7 @@ export function useApi<T>(
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       onError?.(errorMessage);
+      // Log error for debugging (remove in production)
       console.error('API request failed:', err);
     } finally {
       setLoading(false);
@@ -125,6 +126,7 @@ export function useApiMutation<T, TVariables = unknown>(
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
         setError(errorMessage);
+        // Log error for debugging (remove in production)
         console.error('API mutation failed:', err);
         return null;
       } finally {

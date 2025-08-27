@@ -45,7 +45,8 @@ export function LoginForm({ onSubmit }: LoginFormProps): React.ReactElement {
         await onSubmit(data);
       } else {
         // Default: log the data (replace with actual auth logic)
-        console.log('Login data:', data);
+        // TODO: Replace with actual authentication logic
+        // console.log('Login data:', data);
         
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -57,6 +58,7 @@ export function LoginForm({ onSubmit }: LoginFormProps): React.ReactElement {
       // Reset form on success
       form.reset();
     } catch (error) {
+      // Log error for debugging (remove in production)
       console.error('Login failed:', error);
       
       // Set form error

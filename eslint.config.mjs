@@ -13,7 +13,7 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  // Global ignores
+  // Global ignores - moved from .eslintignore
   {
     ignores: [
       "**/node_modules/**",
@@ -28,6 +28,8 @@ const eslintConfig = [
       "**/next-env.d.ts",
       "**/coverage/**",
       "**/public/**",
+      "**/tsconfig.tsbuildinfo",
+      "**/.DS_Store",
     ],
   },
   
@@ -95,6 +97,7 @@ const eslintConfig = [
         allowNullableString: true,
         allowNullableNumber: false,
         allowAny: false,
+        allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing: false,
       }],
       
       // Type imports
@@ -259,6 +262,7 @@ const eslintConfig = [
       // These are handled by Next.js config but we can be more strict
       "react/prop-types": "off", // We use TypeScript
       "react/react-in-jsx-scope": "off", // Not needed in Next.js
+      "react/no-unescaped-entities": "error",
       
       // ============================================
       // DISABLED RULES
@@ -309,6 +313,7 @@ const eslintConfig = [
       "@typescript-eslint/no-var-requires": "off",
       "@typescript-eslint/naming-convention": "off",
       "import/order": "off",
+      "@typescript-eslint/require-await": "off",
     },
   },
 ];

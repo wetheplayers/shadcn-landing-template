@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 /**
  * Health check endpoint for monitoring and Docker health checks
  */
-export async function GET(): Promise<NextResponse> {
+export function GET(): NextResponse {
   try {
     // You can add additional health checks here
     // For example: database connectivity, external service availability, etc.

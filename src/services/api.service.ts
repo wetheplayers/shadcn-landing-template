@@ -64,8 +64,8 @@ export class ApiService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      return data as ApiResponse<T>;
+      const data = await response.json() as ApiResponse<T>;
+      return data;
     } catch (error) {
       clearTimeout(timeoutId);
       

@@ -161,7 +161,7 @@ export const useUIStore = create<UIStore>()(
         });
         
         // Auto-remove toast after duration
-        const duration = toast.duration || 5000;
+        const duration = toast.duration ?? 5000;
         if (duration > 0) {
           setTimeout(() => {
             get().removeToast(id);

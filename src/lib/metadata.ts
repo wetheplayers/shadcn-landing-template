@@ -150,8 +150,9 @@ export function generateProductMetadata(
 
   // Add product-specific OpenGraph data
   if (metadata.openGraph) {
-    (metadata.openGraph as any).type = 'product';
-    (metadata.openGraph as any).product = {
+    const openGraph = metadata.openGraph as Record<string, unknown>;
+    openGraph['type'] = 'product';
+    openGraph['product'] = {
       price: {
         amount: price,
         currency,

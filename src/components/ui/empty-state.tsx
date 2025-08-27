@@ -29,7 +29,7 @@ export function EmptyState({
         className
       )}
     >
-      {icon && (
+      {icon !== undefined && icon !== null && (
         <div className="mb-4 text-muted-foreground">
           {icon}
         </div>
@@ -37,13 +37,13 @@ export function EmptyState({
       
       <h3 className="text-lg font-semibold">{title}</h3>
       
-      {description && (
+      {description !== undefined && description !== null && (
         <p className="mt-2 max-w-sm text-sm text-muted-foreground">
           {description}
         </p>
       )}
       
-      {action && (
+      {action !== undefined && action !== null && (
         <Button
           onClick={action.onClick}
           className="mt-6"
@@ -99,7 +99,7 @@ export function ErrorState({
         {description}
       </p>
       
-      {retry && (
+      {retry !== undefined && retry !== null && (
         <Button
           onClick={retry}
           className="mt-6"

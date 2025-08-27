@@ -220,7 +220,7 @@ export function ProductSchema({
       priceCurrency: currency,
       availability,
     },
-    ...(rating && reviewCount && {
+    ...(rating !== undefined && rating !== null && reviewCount !== undefined && reviewCount !== null && {
       aggregateRating: {
         '@type': 'AggregateRating',
         ratingValue: rating,

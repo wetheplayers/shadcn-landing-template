@@ -50,8 +50,8 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
-  override render(): ReactNode {
-    if (this.state.hasError) {
+    override render(): ReactNode {
+    if (this.state.hasError === true) {
       // Custom fallback UI provided
       if (this.props.fallback) {
         return this.props.fallback;
@@ -66,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Oops! Something went wrong
               </CardTitle>
               <CardDescription>
-                We're sorry for the inconvenience. The application encountered an unexpected error.
+                We&apos;re sorry for the inconvenience. The application encountered an unexpected error.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

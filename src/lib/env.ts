@@ -111,7 +111,7 @@ ${formatted}
         return {
           ...serverSchema.parse({}),
           ...clientSchema.parse({}),
-        } as ProcessEnv;
+        } satisfies ProcessEnv;
       }
       
       // In production, throw to prevent deployment

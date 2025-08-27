@@ -29,7 +29,7 @@ export function useMediaQuery(query: string): boolean {
 
     // Add listener
     // Modern browsers
-    if (mediaQuery.addEventListener) {
+    if (typeof mediaQuery.addEventListener === 'function') {
       mediaQuery.addEventListener('change', handleChange);
     } else {
       // Fallback for older browsers
@@ -38,7 +38,7 @@ export function useMediaQuery(query: string): boolean {
 
     // Cleanup
     return () => {
-      if (mediaQuery.removeEventListener) {
+      if (typeof mediaQuery.removeEventListener === 'function') {
         mediaQuery.removeEventListener('change', handleChange);
       } else {
         // Fallback for older browsers

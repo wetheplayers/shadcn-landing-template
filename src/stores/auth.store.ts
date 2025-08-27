@@ -72,7 +72,7 @@ export const useAuthStore = create<AuthStore>()(
               throw new Error('Invalid credentials');
             }
 
-            const data = await response.json();
+            const data = await response.json() as { user: User; token: string };
             
             set((state) => {
               state.user = data.user;
@@ -118,7 +118,7 @@ export const useAuthStore = create<AuthStore>()(
               throw new Error('Registration failed');
             }
 
-            const data = await response.json();
+            const data = await response.json() as { user: User; token: string };
             
             set((state) => {
               state.user = data.user;
@@ -209,7 +209,7 @@ export const useAuthStore = create<AuthStore>()(
               throw new Error('Session expired');
             }
 
-            const user = await response.json();
+            const user = await response.json() as User;
             
             set((state) => {
               state.user = user;
@@ -242,14 +242,14 @@ export const useAuthStore = create<AuthStore>()(
               throw new Error('Token refresh failed');
             }
 
-            const data = await response.json();
+            const data = await response.json() as { token: string };
             
             set((state) => {
               state.token = data.token;
             });
-          } catch (error) {
+          } catch (_error) {
             get().logout();
-            throw error;
+            throw new Error('Token refresh failed');
           }
         },
       })),

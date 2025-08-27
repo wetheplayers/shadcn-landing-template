@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 
 import { useApi, useApiMutation } from '../use-api';
 
@@ -125,7 +125,9 @@ describe('useApi', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
 
     // Call refetch
-    await result.current.refetch();
+    await act(async () => {
+      await result.current.refetch();
+    });
 
     expect(global.fetch).toHaveBeenCalledTimes(2);
   });
@@ -152,7 +154,9 @@ describe('useApiMutation', () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBeNull();
 
-    const response = await result.current.mutate(mockVariables);
+    const response = await act(async () => {
+      return result.current.mutate(mockVariables);
+    });
 
     expect(response).toEqual(mockResponse);
     expect(global.fetch).toHaveBeenCalledWith('/api/users', {
@@ -171,7 +175,9 @@ describe('useApiMutation', () => {
 
     const { result } = renderHook(() => useApiMutation('/api/users', 'POST'));
 
-    const response = await result.current.mutate({ name: 'Test' });
+    const response = await act(async () => {
+      return result.current.mutate({ name: 'Test' });
+    });
 
     expect(response).toBeNull();
     expect(result.current.error).toBe('HTTP 400: Bad Request');
