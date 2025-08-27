@@ -1,35 +1,51 @@
 'use client';
 
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import React, { Component, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+interface ErrorInfo {
+  componentStack: string;
+}
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  resetKeys?: unknown[];
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  errorId: string | null;
 }
 
 /**
- * Error Boundary component to catch JavaScript errors in child components
- * Provides a fallback UI and error logging capabilities
+ * Error boundary component for catching React errors
+ * Provides fallback UI and error reporting capabilities
  */
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { 
+      hasError: false, 
+      error: null, 
+      errorInfo: null,
+      errorId: null 
+    };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     // Update state so the next render will show the fallback UI
-    return { hasError: true, error, errorInfo: null };
+    return { 
+      hasError: true, 
+      error, 
+      errorInfo: null,
+      errorId: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
   }
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
@@ -44,13 +60,50 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // Call optional error handler
     this.props.onError?.(error, errorInfo);
+
+    // Report to external error tracking service (if configured)
+    this.reportError(error, errorInfo);
+  }
+
+  override componentDidUpdate(prevProps: Props): void {
+    // Reset error state when resetKeys change
+    if (prevProps.resetKeys !== this.props.resetKeys) {
+      this.setState({ 
+        hasError: false, 
+        error: null, 
+        errorInfo: null,
+        errorId: null 
+      });
+    }
   }
 
   private readonly handleReset = (): void => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+    this.setState({ 
+      hasError: false, 
+      error: null, 
+      errorInfo: null,
+      errorId: null 
+    });
   };
 
-    override render(): ReactNode {
+  private readonly reportError = (error: Error, errorInfo: ErrorInfo): void => {
+    // In a real application, you would send this to your error tracking service
+    // Example: Sentry, LogRocket, Bugsnag, etc.
+    if (process.env.NODE_ENV === 'production') {
+      // Send to error tracking service
+      console.error('Error reported to tracking service:', {
+        error: error.message,
+        stack: error.stack,
+        componentStack: errorInfo.componentStack,
+        errorId: this.state.errorId,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        url: window.location.href,
+      });
+    }
+  };
+
+  override render(): ReactNode {
     if (this.state.hasError === true) {
       // Custom fallback UI provided
       if (this.props.fallback) {
@@ -67,6 +120,11 @@ export class ErrorBoundary extends Component<Props, State> {
               </CardTitle>
               <CardDescription>
                 We&apos;re sorry for the inconvenience. The application encountered an unexpected error.
+                {this.state.errorId && (
+                  <span className="block mt-2 text-xs text-muted-foreground">
+                    Error ID: {this.state.errorId}
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -119,4 +177,27 @@ export function withErrorBoundary<P extends object>(
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
 
   return WrappedComponent;
+}
+
+/**
+ * Hook for functional components to handle errors
+ */
+export function useErrorHandler() {
+  return {
+    handleError: (error: Error, errorInfo?: ErrorInfo) => {
+      console.error('Error caught by useErrorHandler:', error, errorInfo);
+      
+      // In production, report to error tracking service
+      if (process.env.NODE_ENV === 'production') {
+        console.error('Error reported to tracking service:', {
+          error: error.message,
+          stack: error.stack,
+          componentStack: errorInfo?.componentStack,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          url: window.location.href,
+        });
+      }
+    },
+  };
 }

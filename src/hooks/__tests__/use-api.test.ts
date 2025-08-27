@@ -4,6 +4,10 @@ import { useApi, useApiMutation } from '../use-api';
 
 // Mock fetch globally
 global.fetch = jest.fn();
+global.performance = {
+  ...global.performance,
+  now: jest.fn(() => Date.now()),
+};
 
 describe('useApi', () => {
   beforeEach(() => {

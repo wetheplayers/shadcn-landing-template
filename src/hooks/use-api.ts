@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import type { ApiResponse } from '@/types';
+import { useApiPerformance } from './use-performance';
 
 interface UseApiResult<T> {
   data: T | null;
@@ -30,12 +31,14 @@ export function useApi<T>(
   options: UseApiOptions = {}
 ): UseApiResult<T> {
   const { immediate = true, onSuccess, onError } = options;
+  const { trackApiCall } = useApiPerformance();
   
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async (): Promise<void> => {
+    const startTime = performance.now();
     try {
       setLoading(true);
       setError(null);
@@ -66,8 +69,10 @@ export function useApi<T>(
       console.error('API request failed:', err);
     } finally {
       setLoading(false);
+      const endTime = performance.now();
+      trackApiCall(url, startTime, endTime, error === null);
     }
-  }, [url, onSuccess, onError]);
+  }, [url, onSuccess, onError, trackApiCall, error]);
 
   useEffect(() => {
     if (immediate) {

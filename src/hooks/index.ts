@@ -24,3 +24,6 @@ export {
   useIsPortrait,
   useIsLandscape,
 } from './use-media-query';
+
+// Performance hooks
+export { usePerformance, useRenderPerformance, useApiPerformance } from './use-performance';

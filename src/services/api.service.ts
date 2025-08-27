@@ -31,14 +31,6 @@ export class ApiService {
   }
 
   /**
-   * Clear authorization header
-   */
-  clearAuthToken(): void {
-    const { Authorization, ...rest } = this.headers as Record<string, string>;
-    this.headers = rest;
-  }
-
-  /**
    * Make HTTP request with timeout
    */
   private async request<T>(
@@ -47,6 +39,7 @@ export class ApiService {
   ): Promise<ApiResponse<T>> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const startTime = performance.now();
 
     try {
       const response = await fetch(`${this.baseUrl}${url}`, {
@@ -59,6 +52,10 @@ export class ApiService {
       });
 
       clearTimeout(timeoutId);
+      const endTime = performance.now();
+
+      // Track performance
+      this.trackPerformance(url, startTime, endTime, response.ok);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -68,6 +65,10 @@ export class ApiService {
       return data;
     } catch (error) {
       clearTimeout(timeoutId);
+      const endTime = performance.now();
+      
+      // Track performance for failed requests
+      this.trackPerformance(url, startTime, endTime, false);
       
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
@@ -77,6 +78,29 @@ export class ApiService {
       }
       
       throw new Error('Unknown error occurred');
+    }
+  }
+
+  /**
+   * Track API call performance
+   */
+  private trackPerformance(url: string, startTime: number, endTime: number, success: boolean): void {
+    const duration = endTime - startTime;
+    
+    // Log slow requests
+    if (duration > 1000) {
+      console.warn(`Slow API call to ${url}: ${duration.toFixed(2)}ms`);
+    }
+    
+    // In production, send to analytics
+    if (process.env.NODE_ENV === 'production') {
+      // Example: Send to analytics service
+      console.log('API Performance:', {
+        url,
+        duration: Math.round(duration),
+        success,
+        timestamp: new Date().toISOString(),
+      });
     }
   }
 
@@ -125,6 +149,14 @@ export class ApiService {
    */
   async delete<T>(url: string): Promise<ApiResponse<T>> {
     return this.request<T>(url, { method: 'DELETE' });
+  }
+
+  /**
+   * Clear authorization header
+   */
+  clearAuthToken(): void {
+    const { Authorization, ...rest } = this.headers as Record<string, string>;
+    this.headers = rest;
   }
 }
 

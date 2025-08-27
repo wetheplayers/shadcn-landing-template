@@ -15,7 +15,7 @@ export function StructuredData({ data }: StructuredDataProps): React.ReactElemen
       dangerouslySetInnerHTML={{
         __html: JSON.stringify(data),
       }}
-      strategy="beforeInteractive"
+      strategy="afterInteractive"
     />
   );
 }

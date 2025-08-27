@@ -314,6 +314,7 @@ const eslintConfig = [
       "@typescript-eslint/naming-convention": "off",
       "import/order": "off",
       "@typescript-eslint/require-await": "off",
+      "@typescript-eslint/promise-function-async": "off",
     },
   },
 ];
