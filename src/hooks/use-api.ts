@@ -2,9 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-import type { ApiResponse } from '@/types';
+
+import { logApiError } from '@/services/error.service';
 
 import { useApiPerformance } from './use-performance';
+
+import type { ApiResponse } from '@/types';
 
 interface UseApiResult<T> {
   data: T | null;
@@ -66,8 +69,9 @@ export function useApi<T>(
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       onError?.(errorMessage);
-      // Log error for debugging (remove in production)
-      console.error('API request failed:', err);
+      
+      // Log error using error service
+      logApiError(err instanceof Error ? err : new Error(errorMessage), url, 'GET');
     } finally {
       setLoading(false);
       const endTime = performance.now();
@@ -132,8 +136,9 @@ export function useApiMutation<T, TVariables = unknown>(
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
         setError(errorMessage);
-        // Log error for debugging (remove in production)
-        console.error('API mutation failed:', err);
+        
+        // Log error using error service
+        logApiError(err instanceof Error ? err : new Error(errorMessage), url, method);
         return null;
       } finally {
         setLoading(false);

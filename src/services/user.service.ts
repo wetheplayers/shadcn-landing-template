@@ -4,7 +4,7 @@ import type { User } from '@/types';
 
 /**
  * User Service
- * Handles all user-related API operations
+ * Handles authentication-related user operations
  */
 class UserService extends ApiService {
   constructor() {
@@ -25,67 +25,15 @@ class UserService extends ApiService {
   }
 
   /**
-   * Get user by ID
+   * Update current user profile
    */
-  async getUserById(id: string): Promise<User | null> {
+  async updateProfile(userData: Partial<User>): Promise<User | null> {
     try {
-      const response = await this.get<User>(`/${id}`);
+      const response = await this.patch<User>('/me', userData);
       return response.data;
     } catch (error) {
-      console.error(`Failed to get user ${id}:`, error);
+      console.error('Failed to update profile:', error);
       return null;
-    }
-  }
-
-  /**
-   * Get all users
-   */
-  async getUsers(): Promise<User[]> {
-    try {
-      const response = await this.get<User[]>('');
-      return response.data;
-    } catch (error) {
-      console.error('Failed to get users:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Create new user
-   */
-  async createUser(userData: Partial<User>): Promise<User | null> {
-    try {
-      const response = await this.post<User>('', userData);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to create user:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Update user
-   */
-  async updateUser(id: string, userData: Partial<User>): Promise<User | null> {
-    try {
-      const response = await this.patch<User>(`/${id}`, userData);
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to update user ${id}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Delete user
-   */
-  async deleteUser(id: string): Promise<boolean> {
-    try {
-      await this.delete(`/${id}`);
-      return true;
-    } catch (error) {
-      console.error(`Failed to delete user ${id}:`, error);
-      return false;
     }
   }
 
@@ -93,43 +41,48 @@ class UserService extends ApiService {
    * Update user preferences
    */
   async updatePreferences(
-    id: string,
     preferences: Record<string, unknown>
   ): Promise<User | null> {
     try {
-      const response = await this.patch<User>(`/${id}/preferences`, preferences);
+      const response = await this.patch<User>('/me/preferences', preferences);
       return response.data;
     } catch (error) {
-      console.error(`Failed to update preferences for user ${id}:`, error);
+      console.error('Failed to update preferences:', error);
       return null;
     }
   }
 
   /**
-   * Upload user avatar
+   * Change password
    */
-  async uploadAvatar(id: string, file: File): Promise<string | null> {
+  async changePassword(
+    currentPassword: string,
+    newPassword: string
+  ): Promise<boolean> {
     try {
-      const formData = new FormData();
-      formData.append('avatar', file);
-
-      const response = await fetch(`/api/users/${id}/avatar`, {
-        method: 'POST',
-        body: formData,
+      await this.post('/me/change-password', {
+        currentPassword,
+        newPassword,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload avatar');
-      }
-
-      const data = await response.json() as { avatarUrl: string };
-      return data.avatarUrl;
+      return true;
     } catch (error) {
-      console.error(`Failed to upload avatar for user ${id}:`, error);
-      return null;
+      console.error('Failed to change password:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Delete account
+   */
+  async deleteAccount(password: string): Promise<boolean> {
+    try {
+      await this.post('/me/delete-account', { password });
+      return true;
+    } catch (error) {
+      console.error('Failed to delete account:', error);
+      return false;
     }
   }
 }
 
-// Export singleton instance
 export const userService = new UserService();

@@ -7,27 +7,11 @@
 export { useApi } from './use-api';
 export { useLocalStorage } from './use-local-storage';
 
-// Performance hooks
-export { 
-  usePerformanceMetrics, 
-  useApiPerformance, 
-  useMemoryMonitoring,
-  useInteractionTracking 
-} from './use-performance';
-
-// Optimization hooks
-export {
-  useVirtualization,
-  useIntersectionObserverAdvanced,
-  useDebounce,
-  useThrottle,
-  useMemoizedValue,
-  useAbortableFetch,
-  useBatchState,
-} from './use-optimization';
-
 // Utility hooks
 export { useClickOutside } from './use-click-outside';
-export { useDebounce as useDebounceSimple } from './use-debounce';
+export { useDebounce } from './use-debounce';
+export { useFocusManagement } from './use-focus-management';
 export { useIntersectionObserver } from './use-intersection-observer';
 export { useMediaQuery } from './use-media-query';
+export { useIsMobile as useMobile } from './use-mobile';
+export { useApiPerformance } from './use-performance';

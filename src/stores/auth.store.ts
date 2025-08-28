@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
+import { authService, AuthService, type LoginCredentials, type RegisterData } from '@/services/auth.service';
 import type { User } from '@/types';
 
 interface AuthState {
@@ -14,9 +15,9 @@ interface AuthState {
 
 interface AuthActions {
   // Authentication actions
-  login: (email: string, password: string) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;
-  register: (userData: Partial<User> & { password: string }) => Promise<void>;
+  register: (userData: RegisterData) => Promise<void>;
   
   // User management
   setUser: (user: User | null) => void;
@@ -54,29 +55,18 @@ export const useAuthStore = create<AuthStore>()(
         token: null,
 
         // Login action
-        login: async (email: string, password: string) => {
+        login: async (credentials: LoginCredentials) => {
           set((state) => {
             state.isLoading = true;
             state.error = null;
           });
 
           try {
-            // TODO: Replace with actual API call
-            const response = await fetch('/api/auth/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, password }),
-            });
-
-            if (!response.ok) {
-              throw new Error('Invalid credentials');
-            }
-
-            const data = await response.json() as { user: User; token: string };
+            const response = await authService.login(credentials);
             
             set((state) => {
-              state.user = data.user;
-              state.token = data.token;
+              state.user = response.user;
+              state.token = response.token;
               state.isAuthenticated = true;
               state.isLoading = false;
             });
@@ -91,6 +81,16 @@ export const useAuthStore = create<AuthStore>()(
 
         // Logout action
         logout: () => {
+          const token = get().token;
+          
+          // Call logout API if token exists
+          if (token) {
+            void authService.logout(token).catch((error) => {
+              // Continue with local logout even if API call fails
+              console.warn('Logout API call failed:', error);
+            });
+          }
+
           set((state) => {
             state.user = null;
             state.token = null;
@@ -100,29 +100,18 @@ export const useAuthStore = create<AuthStore>()(
         },
 
         // Register action
-        register: async (userData) => {
+        register: async (userData: RegisterData) => {
           set((state) => {
             state.isLoading = true;
             state.error = null;
           });
 
           try {
-            // TODO: Replace with actual API call
-            const response = await fetch('/api/auth/register', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(userData),
-            });
-
-            if (!response.ok) {
-              throw new Error('Registration failed');
-            }
-
-            const data = await response.json() as { user: User; token: string };
+            const response = await authService.register(userData);
             
             set((state) => {
-              state.user = data.user;
-              state.token = data.token;
+              state.user = response.user;
+              state.token = response.token;
               state.isAuthenticated = true;
               state.isLoading = false;
             });
@@ -187,39 +176,68 @@ export const useAuthStore = create<AuthStore>()(
 
         // Check authentication status
         checkAuth: async () => {
-          const token = get().token;
-          if (!token) {
-            get().logout();
+          const state = get();
+          
+          // If already authenticated and have user, don't check again
+          if (state.isAuthenticated && state.user && state.token) {
+            return;
+          }
+          
+          // If no token, logout
+          if (!state.token) {
+            state.logout();
             return;
           }
 
-          set((state) => {
-            state.isLoading = true;
+          // Check if token is expired
+          if (AuthService.isTokenExpired(state.token)) {
+            state.logout();
+            return;
+          }
+
+          set((draft) => {
+            draft.isLoading = true;
           });
 
           try {
-            // TODO: Replace with actual API call
-            const response = await fetch('/api/auth/me', {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-
-            if (!response.ok) {
-              throw new Error('Session expired');
+            // For demo authentication, just verify the token exists
+            if (state.token === 'demo-jwt-token-123') {
+              // If user doesn't exist, create a demo user
+              if (!state.user) {
+                const demoUser: User = {
+                  id: 'demo-user-1',
+                  name: 'Demo User',
+                  email: 'demo@example.com',
+                  avatar: '/avatars/demo.jpg',
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                };
+                set((draft) => {
+                  draft.user = demoUser;
+                });
+              }
+              
+              set((draft) => {
+                draft.isAuthenticated = true;
+                draft.isLoading = false;
+                draft.error = null;
+              });
+              return;
             }
 
-            const user = await response.json() as User;
+            // Validate session with server
+            const user = await authService.validateSession(state.token);
             
-            set((state) => {
-              state.user = user;
-              state.isAuthenticated = true;
-              state.isLoading = false;
+            set((draft) => {
+              draft.user = user;
+              draft.isAuthenticated = true;
+              draft.isLoading = false;
+              draft.error = null;
             });
           } catch (_error) {
             get().logout();
-            set((state) => {
-              state.isLoading = false;
+            set((draft) => {
+              draft.isLoading = false;
             });
           }
         },
@@ -230,22 +248,16 @@ export const useAuthStore = create<AuthStore>()(
           if (!token) return;
 
           try {
-            // TODO: Replace with actual API call
-            const response = await fetch('/api/auth/refresh', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-
-            if (!response.ok) {
-              throw new Error('Token refresh failed');
+            // For demo authentication, just return early (no refresh needed)
+            if (token === 'demo-jwt-token-123') {
+              return;
             }
 
-            const data = await response.json() as { token: string };
+            // Refresh token with server
+            const response = await authService.refreshToken(token);
             
             set((state) => {
-              state.token = data.token;
+              state.token = response.token;
             });
           } catch (_error) {
             get().logout();
@@ -260,6 +272,9 @@ export const useAuthStore = create<AuthStore>()(
           token: state.token,
           isAuthenticated: state.isAuthenticated,
         }),
+        onRehydrateStorage: () => (state) => {
+          console.log('Auth store rehydrated:', state);
+        },
       }
     ),
     {

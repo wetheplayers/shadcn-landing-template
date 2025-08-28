@@ -1,10 +1,12 @@
 import { Geist, Geist_Mono } from "next/font/google";
 
-import type { Metadata } from "next";
-
+import { SkipLinks } from "@/components/accessibility/skip-links";
 import { ThemeProvider } from "@/components/custom/theme-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { WebVitalsMonitor } from "@/components/performance/web-vitals";
 import { Toaster } from "@/components/ui/sonner";
+
+import type { Metadata } from "next";
 
 import "./globals.css";
 
@@ -41,8 +43,10 @@ export default function RootLayout({
             defaultTheme="system"
             enableSystem
           >
-            <main>{children}</main>
+            <SkipLinks />
+            <main id="main-content" role="main">{children}</main>
             <Toaster />
+            <WebVitalsMonitor />
           </ThemeProvider>
         </ErrorBoundary>
       </body>

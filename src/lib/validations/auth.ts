@@ -4,21 +4,48 @@ import { z } from 'zod';
  * Authentication validation schemas
  */
 
-// Password requirements
+// Password requirements with comprehensive validation
 const passwordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')
+  .max(128, 'Password must be less than 128 characters')
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
+  .refine((password) => {
+    // Check for common weak passwords
+    const weakPasswords = ['password', '123456', 'qwerty', 'admin', 'letmein'];
+    return !weakPasswords.includes(password.toLowerCase());
+  }, 'Password is too common. Please choose a stronger password')
+  .refine((password) => {
+    // Check for repeated characters
+    const repeatedChars = /(.)\1{2,}/;
+    return !repeatedChars.test(password);
+  }, 'Password contains too many repeated characters');
 
-// Email validation with UK-specific domains
+// Email validation with UK-specific domains and comprehensive checks
 const emailSchema = z
   .string()
   .email('Please enter a valid email address')
   .toLowerCase()
-  .trim();
+  .trim()
+  .min(5, 'Email address is too short')
+  .max(254, 'Email address is too long')
+  .refine((email) => {
+    // Check for disposable email domains
+    const disposableDomains = [
+      'tempmail.org', 'guerrillamail.com', '10minutemail.com',
+      'mailinator.com', 'yopmail.com', 'throwaway.email'
+    ];
+    const domain = email.split('@')[1];
+    return domain ? !disposableDomains.includes(domain) : true;
+  }, 'Please use a valid email address')
+  .refine((email) => {
+    // Check for valid email format
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  }, 'Please enter a valid email address');
 
 /**
  * Login schema

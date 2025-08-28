@@ -1,0 +1,56 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f3f4f6;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.2" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main background -->
+  <rect width="800" height="600" fill="url(#grad1)"/>
+  
+  <!-- Overlay pattern -->
+  <rect width="800" height="600" fill="url(#grad2)"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="150" cy="120" r="60" fill="rgba(255,255,255,0.1)"/>
+  <circle cx="680" cy="480" r="80" fill="rgba(255,255,255,0.08)"/>
+  <circle cx="720" cy="150" r="40" fill="rgba(255,255,255,0.12)"/>
+  <circle cx="100" cy="450" r="50" fill="rgba(255,255,255,0.1)"/>
+  
+  <!-- Abstract shapes -->
+  <path d="M200 200 Q300 150 400 200 T600 180 L600 250 Q500 300 400 250 T200 270 Z" fill="rgba(255,255,255,0.1)"/>
+  <path d="M150 350 Q250 320 350 380 T550 360 L550 420 Q450 460 350 420 T150 400 Z" fill="rgba(255,255,255,0.08)"/>
+  
+  <!-- Central icon/logo area -->
+  <g transform="translate(400,300)">
+    <!-- Shield/security icon -->
+    <path d="M-30 -40 Q-30 -50 -20 -50 L20 -50 Q30 -50 30 -40 L30 -10 Q30 20 0 40 Q-30 20 -30 -10 Z" fill="rgba(255,255,255,0.9)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+    
+    <!-- Lock icon inside shield -->
+    <rect x="-12" y="-5" width="24" height="20" rx="2" fill="rgba(99,102,241,0.8)"/>
+    <path d="M-8 -5 L-8 -12 Q-8 -18 0 -18 Q8 -18 8 -12 L8 -5" stroke="rgba(99,102,241,0.8)" stroke-width="3" fill="none"/>
+    <circle cx="0" cy="5" r="3" fill="rgba(255,255,255,0.9)"/>
+  </g>
+  
+  <!-- Geometric patterns -->
+  <g opacity="0.15">
+    <polygon points="50,50 80,20 110,50 80,80" fill="white"/>
+    <polygon points="700,500 730,470 760,500 730,530" fill="white"/>
+    <polygon points="650,100 670,80 690,100 670,120" fill="white"/>
+  </g>
+  
+  <!-- Subtle grid pattern -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="600" fill="url(#grid)"/>
+</svg>

@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
+import { useAuthStore } from '@/stores/auth.store';
+import { logComponentError } from '@/services/error.service';
 
 interface LoginFormProps {
   onSubmit?: (data: LoginFormData) => Promise<void>;
@@ -26,6 +28,7 @@ interface LoginFormProps {
  */
 export function LoginForm({ onSubmit }: LoginFormProps): React.ReactElement {
   const [isLoading, setIsLoading] = useState(false);
+  const { login, error: authError, clearError } = useAuthStore();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -39,27 +42,25 @@ export function LoginForm({ onSubmit }: LoginFormProps): React.ReactElement {
   const handleSubmit = async (data: LoginFormData): Promise<void> => {
     try {
       setIsLoading(true);
+      clearError();
       
       // Call the provided onSubmit handler or default logic
       if (onSubmit) {
         await onSubmit(data);
+        // Don't reset form here - let the parent component handle the redirect
       } else {
-        // Default: log the data (replace with actual auth logic)
-        // TODO: Replace with actual authentication logic
-        // console.log('Login data:', data);
+        // Use auth store for authentication
+        await login({
+          email: data.email,
+          password: data.password,
+        });
         
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Show success message
-        alert('Login successful!');
+        // Reset form on success
+        form.reset();
       }
-      
-      // Reset form on success
-      form.reset();
     } catch (error) {
-      // Log error for debugging (remove in production)
-      console.error('Login failed:', error);
+      // Log error using error service
+      logComponentError(error instanceof Error ? error : new Error('Unknown error'), 'LoginForm', 'submit');
       
       // Set form error
       form.setError('root', {
@@ -74,9 +75,9 @@ export function LoginForm({ onSubmit }: LoginFormProps): React.ReactElement {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {form.formState.errors.root && (
+        {(form.formState.errors.root || authError) && (
           <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {form.formState.errors.root.message}
+            {form.formState.errors.root?.message || authError}
           </div>
         )}
 

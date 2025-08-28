@@ -41,10 +41,10 @@ export default function ThemeToggleButton({
 
 
 
-    if (!styleElement) {
-      styleElement = document.createElement("style")
-      styleElement.id = styleId
-      document.head.appendChild(styleElement)
+    if (styleElement === null) {
+      styleElement = document.createElement("style");
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
     }
 
     styleElement.textContent = css

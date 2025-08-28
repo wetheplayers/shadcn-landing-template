@@ -1,18 +1,58 @@
+'use client';
+
+import Link from "next/link";
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import ThemeToggleButton from "@/components/ui/theme-toggle-button";
+import { useAuthStore } from '@/stores/auth.store';
 
 /**
  * Home page component showcasing ShadCN UI components
- * Demonstrates the integration of multiple UI components
+ * Redirects authenticated users to dashboard
  * @component
  */
-export default function HomePage() {
+export default function HomePage(): React.ReactElement {
+  const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check authentication status on mount
+            void checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    // Redirect authenticated users to dashboard
+    if (!isLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render content if authenticated (will redirect)
+  if (isAuthenticated) {
+    return <div />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b">
+      <header className="border-b" role="banner">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">ShadCN Next.js</h1>
           <ThemeToggleButton variant="circle-blur" start="top-right" />
@@ -23,17 +63,19 @@ export default function HomePage() {
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto space-y-12">
           {/* Hero Section */}
-          <section className="text-center space-y-6">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+          <section className="text-center space-y-6" aria-labelledby="hero-title">
+            <h2 id="hero-title" className="text-4xl md:text-6xl font-bold tracking-tight">
               Welcome to your{" "}
               <span className="text-primary">ShadCN UI</span> app
-            </h1>
+            </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               A modern web application built with Next.js 15.3, React 19.1, and ShadCN UI.
               Experience beautiful, accessible components with TypeScript.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg">Get Started</Button>
+              <Button size="lg" asChild>
+                <Link href="/login">Get Started</Link>
+              </Button>
               <Button variant="outline" size="lg">
                 Learn More
               </Button>
@@ -41,7 +83,8 @@ export default function HomePage() {
           </section>
 
           {/* Features Grid */}
-          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-labelledby="features-title">
+            <h2 id="features-title" className="sr-only">Features</h2>
             <Card>
               <CardHeader>
                 <CardTitle>🚀 Next.js 15.3</CardTitle>
@@ -134,9 +177,9 @@ export default function HomePage() {
           </section>
 
           {/* Interactive Demo */}
-          <section className="space-y-6">
+          <section className="space-y-6" aria-labelledby="demo-title">
             <div className="text-center">
-              <h2 className="text-3xl font-bold tracking-tight">Try it out</h2>
+              <h2 id="demo-title" className="text-3xl font-bold tracking-tight">Try it out</h2>
               <p className="text-muted-foreground mt-2">
                 Interactive demonstration of form components
               </p>
@@ -149,12 +192,20 @@ export default function HomePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Input
-                  type="email"
-                  placeholder="Enter your email address"
-                  className="w-full"
-                />
-                <Button className="w-full">Subscribe</Button>
+                <div className="space-y-2">
+                  <Label htmlFor="subscribe-email" className="sr-only">Email address</Label>
+                  <Input
+                    id="subscribe-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    className="w-full"
+                    aria-describedby="subscribe-description"
+                  />
+                </div>
+                <Button className="w-full" aria-describedby="subscribe-description">Subscribe</Button>
+                <p id="subscribe-description" className="text-xs text-muted-foreground">
+                  We&apos;ll send you updates about new features and improvements.
+                </p>
               </CardContent>
             </Card>
           </section>
@@ -162,7 +213,7 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t mt-24">
+      <footer className="border-t mt-24" role="contentinfo">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-sm text-muted-foreground">
             <p>

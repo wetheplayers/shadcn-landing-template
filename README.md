@@ -57,6 +57,8 @@ src/
 ## 🎨 Features
 
 ### ✅ Core Features
+- 🔐 **Authentication**: Protected routes with login/logout functionality
+- 📊 **Dashboard**: Comprehensive dashboard with analytics and data tables
 - 🌓 **Dark/Light Mode**: System-aware theme switching
 - 📱 **Mobile First**: Responsive design across all devices
 - ♿ **Accessibility**: WCAG compliant components
@@ -73,6 +75,10 @@ src/
 - **Navigation Menu**: Site navigation components
 - **Sonner**: Beautiful toast notifications
 - **Theme Toggle**: Dark/light mode switcher
+- **Sidebar**: Collapsible navigation sidebar
+- **Data Table**: Sortable and filterable data tables
+- **Charts**: Interactive data visualization
+- **Protected Route**: Authentication wrapper component
 
 ### 📊 Developer Experience
 - **Hot Reload**: Instant development feedback
@@ -165,6 +171,27 @@ The project includes setup for:
 - Component testing with Testing Library
 - E2E tests with Playwright
 - Type checking with TypeScript
+
+## 🔐 Authentication & Dashboard
+
+### Demo Credentials
+- **Email**: `demo@example.com`
+- **Password**: `demo123`
+
+### Authentication Flow
+1. Navigate to `/login` to access the login page
+2. Enter demo credentials to authenticate
+3. Upon successful login, you'll be redirected to `/dashboard`
+4. The dashboard is protected and requires authentication
+5. Use the logout button in the sidebar to sign out
+
+### Dashboard Features
+- **Protected Routes**: All dashboard pages require authentication
+- **User Profile**: Display user information in the sidebar
+- **Navigation**: Collapsible sidebar with main navigation
+- **Analytics**: Interactive charts and data visualization
+- **Data Tables**: Sortable and filterable data display
+- **Responsive Design**: Mobile-first approach
 
 ## 🚀 Deployment
 
