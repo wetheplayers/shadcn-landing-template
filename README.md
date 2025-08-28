@@ -1,6 +1,7 @@
 # ShadCN Next.js Application
 
-A modern, production-ready web application built with Next.js 15.3, React 19.1, and ShadCN UI. Designed with British standards in mind, following strict TypeScript best practices.
+A modern, production-ready web application built with Next.js 15.3, React 19.1, and ShadCN UI. 
+Designed with British standards in mind, following strict TypeScript best practices.
 
 ## 🚀 Tech Stack
 
@@ -17,7 +18,7 @@ A modern, production-ready web application built with Next.js 15.3, React 19.1, 
 
 ```
 src/
-├── app/                    # Next.js App Router pages
+├── app/                   # Next.js App Router pages
 │   ├── layout.tsx         # Root layout with providers
 │   ├── page.tsx           # Home page
 │   └── globals.css        # Global styles with CSS variables
@@ -213,4 +214,4 @@ For support and questions:
 
 ---
 
-Built with ❤️ and ☕ following British coding standards.
+Built with ❤️ by Paul Buttle

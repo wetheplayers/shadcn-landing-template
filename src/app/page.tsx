@@ -1,7 +1,7 @@
-import { ThemeToggle } from "@/components/custom/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import ThemeToggleButton from "@/components/ui/theme-toggle-button";
 
 /**
  * Home page component showcasing ShadCN UI components
@@ -15,7 +15,7 @@ export default function HomePage() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">ShadCN Next.js</h1>
-          <ThemeToggle />
+          <ThemeToggleButton variant="circle-blur" start="top-right" />
         </div>
       </header>
 
@@ -65,10 +65,10 @@ export default function HomePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                                 <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                    Leveraging React 19&apos;s enhanced useActionState, 
                    automatic batching, and improved concurrent rendering.
-                 </p>
+                </p>
               </CardContent>
             </Card>
 
@@ -166,10 +166,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-sm text-muted-foreground">
             <p>
-              Built with ❤️ using Next.js, React, and ShadCN UI
-            </p>
-            <p className="mt-2">
-              🇬🇧 Made with British standards in mind
+              Built with ❤️ by Paul Buttle using Next.js, React, and ShadCN UI
             </p>
           </div>
         </div>

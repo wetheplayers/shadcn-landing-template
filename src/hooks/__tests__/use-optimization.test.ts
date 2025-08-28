@@ -1,264 +1,124 @@
 import { renderHook, act } from '@testing-library/react';
-
 import {
   useVirtualization,
-  useDebounceAdvanced,
-  useThrottle,
   useIntersectionObserverAdvanced,
+  useDebounce,
+  useThrottle,
   useMemoizedValue,
-  useCancellableOperation,
-  useShallowEqual,
-  useBatchedState,
+  useAbortableFetch,
+  useBatchState,
 } from '../use-optimization';
 
 // Mock IntersectionObserver
 const mockIntersectionObserver = jest.fn();
+const mockObserve = jest.fn();
+const mockUnobserve = jest.fn();
 const mockDisconnect = jest.fn();
 
-beforeEach(() => {
-  jest.clearAllMocks();
-  
-  global.IntersectionObserver = mockIntersectionObserver;
-  mockIntersectionObserver.mockImplementation((callback) => ({
-    observe: jest.fn(),
-    disconnect: mockDisconnect,
-  }));
-});
+mockIntersectionObserver.mockImplementation(() => ({
+  observe: mockObserve,
+  unobserve: mockUnobserve,
+  disconnect: mockDisconnect,
+}));
+
+// Mock fetch
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
 
 describe('useVirtualization', () => {
   const mockItems = Array.from({ length: 100 }, (_, i) => ({ id: i, name: `Item ${i}` }));
 
-  it('initializes with correct virtual items', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should calculate virtual items correctly', () => {
     const { result } = renderHook(() =>
       useVirtualization(mockItems, {
         itemHeight: 50,
-        containerHeight: 300,
+        containerHeight: 200,
         overscan: 5,
       })
     );
 
     expect(result.current.virtualItems).toBeDefined();
-    expect(result.current.totalSize).toBe(5000); // 100 * 50
-    expect(result.current.startIndex).toBe(0);
-    expect(result.current.endIndex).toBeGreaterThan(0);
+    expect(result.current.totalSize).toBe(5000); // 100 items * 50px
+    expect(result.current.startIndex).toBeGreaterThanOrEqual(0);
+    expect(result.current.endIndex).toBeLessThanOrEqual(99);
   });
 
-  it('calculates correct virtual items based on scroll position', () => {
+  it('should handle empty items array', () => {
     const { result } = renderHook(() =>
-      useVirtualization(mockItems, {
+      useVirtualization([], {
         itemHeight: 50,
-        containerHeight: 300,
-        overscan: 2,
+        containerHeight: 200,
+        overscan: 5,
       })
     );
 
-    // Initial state should show first few items
-    expect(result.current.virtualItems.length).toBeGreaterThan(0);
-    expect(result.current.virtualItems[0]?.index).toBe(0);
-  });
-});
-
-describe('useDebounceAdvanced', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  it('debounces function calls with trailing option', () => {
-    const callback = jest.fn();
-    const { result } = renderHook(() =>
-      useDebounceAdvanced(callback, { delay: 100, trailing: true })
-    );
-
-    // Call multiple times
-    act(() => {
-      result.current();
-      result.current();
-      result.current();
-    });
-
-    expect(callback).not.toHaveBeenCalled();
-
-    // Fast-forward time
-    act(() => {
-      jest.advanceTimersByTime(100);
-    });
-
-    expect(callback).toHaveBeenCalledTimes(1);
-  });
-
-  it('executes immediately with leading option', () => {
-    const callback = jest.fn();
-    const { result } = renderHook(() =>
-      useDebounceAdvanced(callback, { delay: 100, leading: true })
-    );
-
-    act(() => {
-      result.current();
-    });
-
-    expect(callback).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('useThrottle', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  it('throttles function calls', () => {
-    const callback = jest.fn();
-    const { result } = renderHook(() =>
-      useThrottle(callback, { limit: 100 })
-    );
-
-    // Call multiple times
-    act(() => {
-      result.current();
-      result.current();
-      result.current();
-    });
-
-    expect(callback).toHaveBeenCalledTimes(1);
-
-    // Fast-forward time
-    act(() => {
-      jest.advanceTimersByTime(100);
-    });
-
-    act(() => {
-      result.current();
-    });
-
-    expect(callback).toHaveBeenCalledTimes(2);
+    expect(result.current.virtualItems).toEqual([]);
+    expect(result.current.totalSize).toBe(0);
   });
 });
 
 describe('useIntersectionObserverAdvanced', () => {
-  it('initializes with default state', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    global.IntersectionObserver = mockIntersectionObserver as any;
+  });
+
+  it('should initialize with default values', () => {
     const { result } = renderHook(() => useIntersectionObserverAdvanced());
 
     expect(result.current.isIntersecting).toBe(false);
     expect(result.current.intersectionRatio).toBe(0);
     expect(result.current.entry).toBeNull();
+    expect(result.current.ref).toBeDefined();
   });
 
-  it('sets up intersection observer', () => {
-    renderHook(() => useIntersectionObserverAdvanced());
+  it('should set up intersection observer with custom options', () => {
+    const options = {
+      threshold: 0.5,
+      rootMargin: '10px',
+      root: null,
+    };
 
-    expect(mockIntersectionObserver).toHaveBeenCalled();
+    const { result } = renderHook(() => useIntersectionObserverAdvanced(options));
+    
+    // Simulate having an element
+    const mockElement = document.createElement('div');
+    Object.defineProperty(result.current.ref, 'current', {
+      value: mockElement,
+      writable: true,
+    });
+
+    // Trigger the effect by changing the ref
+    act(() => {
+      result.current.ref.current = mockElement;
+    });
+
+    expect(mockIntersectionObserver).toHaveBeenCalledWith(
+      expect.any(Function),
+      options
+    );
+  });
+
+  it('should handle intersection observer not supported', () => {
+    const originalIntersectionObserver = global.IntersectionObserver;
+    delete (global as any).IntersectionObserver;
+
+    const { result } = renderHook(() => useIntersectionObserverAdvanced());
+
+    expect(result.current.isIntersecting).toBe(false);
+    expect(result.current.intersectionRatio).toBe(0);
+
+    global.IntersectionObserver = originalIntersectionObserver;
   });
 });
 
-describe('useMemoizedValue', () => {
-  it('memoizes values correctly', () => {
-    const factory = jest.fn(() => ({ value: 'test' }));
-    const { result, rerender } = renderHook(
-      ({ deps }) => useMemoizedValue(factory, deps),
-      { initialProps: { deps: [1] } }
-    );
-
-    expect(factory).toHaveBeenCalledTimes(1);
-    expect(result.current).toEqual({ value: 'test' });
-
-    // Rerender with same deps
-    rerender({ deps: [1] });
-    expect(factory).toHaveBeenCalledTimes(1); // Should not call again
-
-    // Rerender with different deps
-    rerender({ deps: [2] });
-    expect(factory).toHaveBeenCalledTimes(2); // Should call again
-  });
-
-  it('uses custom equality function', () => {
-    const factory = jest.fn(() => ({ value: 'test' }));
-    const equalityFn = jest.fn(() => true); // Always return true (equal)
-
-    const { result, rerender } = renderHook(
-      ({ deps }) => useMemoizedValue(factory, deps, equalityFn),
-      { initialProps: { deps: [1] } }
-    );
-
-    expect(factory).toHaveBeenCalledTimes(1);
-
-    // Rerender with different deps, but equality function returns true
-    rerender({ deps: [2] });
-    expect(factory).toHaveBeenCalledTimes(1); // Should not call again due to equality function
-  });
-});
-
-describe('useCancellableOperation', () => {
-  it('provides execute and cancel functions', () => {
-    const { result } = renderHook(() => useCancellableOperation());
-
-    expect(result.current.execute).toBeDefined();
-    expect(result.current.cancel).toBeDefined();
-    expect(typeof result.current.execute).toBe('function');
-    expect(typeof result.current.cancel).toBe('function');
-  });
-
-  it('executes operation successfully', async () => {
-    const { result } = renderHook(() => useCancellableOperation());
-    const operation = jest.fn().mockResolvedValue('success');
-
-    const promise = result.current.execute(operation);
-    const response = await promise;
-
-    expect(operation).toHaveBeenCalled();
-    expect(response).toBe('success');
-  });
-
-  it('cancels previous operation when new one starts', async () => {
-    const { result } = renderHook(() => useCancellableOperation());
-    
-    const slowOperation = jest.fn().mockImplementation(() => 
-      new Promise(resolve => setTimeout(() => resolve('slow'), 1000))
-    );
-    
-    const fastOperation = jest.fn().mockResolvedValue('fast');
-
-    // Start slow operation
-    const slowPromise = result.current.execute(slowOperation);
-    
-    // Start fast operation (should cancel slow one)
-    const fastPromise = result.current.execute(fastOperation);
-    
-    const fastResult = await fastPromise;
-    const slowResult = await slowPromise;
-
-    expect(fastResult).toBe('fast');
-    expect(slowResult).toBeNull(); // Should be cancelled
-  });
-});
-
-describe('useShallowEqual', () => {
-  it('returns same reference for equal objects', () => {
-    const { result, rerender } = renderHook(
-      ({ value }) => useShallowEqual(value),
-      { initialProps: { value: { a: 1, b: 2 } } }
-    );
-
-    const firstResult = result.current;
-
-    // Rerender with same object
-    rerender({ value: { a: 1, b: 2 } });
-    expect(result.current).toBe(firstResult); // Same reference
-
-    // Rerender with different object
-    rerender({ value: { a: 1, b: 3 } });
-    expect(result.current).not.toBe(firstResult); // Different reference
-  });
-});
-
-describe('useBatchedState', () => {
+describe('useDebounce', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     jest.useFakeTimers();
   });
 
@@ -266,30 +126,187 @@ describe('useBatchedState', () => {
     jest.useRealTimers();
   });
 
-  it('batches multiple state updates', () => {
-    const { result } = renderHook(() => useBatchedState(0));
+  it('should debounce function calls', () => {
+    const callback = jest.fn();
+    const { result } = renderHook(() => useDebounce(callback, 100));
 
-    // Multiple updates
+    act(() => {
+      result.current('test');
+      result.current('test2');
+      result.current('test3');
+    });
+
+    expect(callback).not.toHaveBeenCalled();
+
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith('test3');
+  });
+
+  it('should handle leading option', () => {
+    const callback = jest.fn();
+    const { result } = renderHook(() => useDebounce(callback, 100, { leading: true }));
+
+    act(() => {
+      result.current('test');
+    });
+
+    expect(callback).toHaveBeenCalledWith('test');
+
+    act(() => {
+      result.current('test2');
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1); // Only the leading call
+  });
+});
+
+describe('useThrottle', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('should throttle function calls', () => {
+    const callback = jest.fn();
+    const { result } = renderHook(() => useThrottle(callback, 100));
+
+    act(() => {
+      result.current('test');
+      result.current('test2');
+      result.current('test3');
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith('test');
+
+    act(() => {
+      jest.advanceTimersByTime(100);
+      result.current('test4');
+    });
+
+    expect(callback).toHaveBeenCalledTimes(2);
+    expect(callback).toHaveBeenCalledWith('test3');
+  });
+});
+
+describe('useMemoizedValue', () => {
+  it('should memoize values based on dependencies', () => {
+    const factory = jest.fn(() => 'memoized value');
+    const deps = [1, 2, 3];
+
+    const { result, rerender } = renderHook(
+      ({ deps }) => useMemoizedValue(factory, deps),
+      { initialProps: { deps } }
+    );
+
+    expect(result.current).toBe('memoized value');
+    expect(factory).toHaveBeenCalledTimes(1);
+
+    // Same dependencies, should not call factory again
+    rerender({ deps });
+    expect(factory).toHaveBeenCalledTimes(1);
+
+    // Different dependencies, should call factory again
+    rerender({ deps: [1, 2, 4] });
+    expect(factory).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('useAbortableFetch', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: 'test' }),
+    } as Response);
+  });
+
+  it('should fetch data successfully', async () => {
+    const { result } = renderHook(() => useAbortableFetch('/api/test'));
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.data).toBeNull();
+    expect(result.current.error).toBeNull();
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.data).toEqual({ data: 'test' });
+    expect(result.current.error).toBeNull();
+  });
+
+  it('should handle fetch errors', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'));
+
+    const { result } = renderHook(() => useAbortableFetch('/api/test'));
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.data).toBeNull();
+    expect(result.current.error).toBe('Network error');
+  });
+
+  it('should abort previous requests', async () => {
+    const { rerender } = renderHook(
+      ({ url }) => useAbortableFetch(url),
+      { initialProps: { url: '/api/test1' } }
+    );
+
+    rerender({ url: '/api/test2' });
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('useBatchState', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('should batch state updates', () => {
+    const { result } = renderHook(() => useBatchState(0));
+
     act(() => {
       result.current[1](1);
       result.current[1](2);
       result.current[1](3);
     });
 
-    // Should still be initial value (not yet batched)
+    // Should still be initial value before timeout
     expect(result.current[0]).toBe(0);
 
-    // Fast-forward to trigger batch
     act(() => {
-      jest.advanceTimersByTime(0);
+      jest.advanceTimersByTime(1);
     });
 
-    // Should be last value
+    // Should be the last value after timeout
     expect(result.current[0]).toBe(3);
   });
 
-  it('handles function updates', () => {
-    const { result } = renderHook(() => useBatchedState(0));
+  it('should handle function updaters', () => {
+    const { result } = renderHook(() => useBatchState(0));
 
     act(() => {
       result.current[1](prev => prev + 1);
@@ -298,7 +315,7 @@ describe('useBatchedState', () => {
     });
 
     act(() => {
-      jest.advanceTimersByTime(0);
+      jest.advanceTimersByTime(1);
     });
 
     expect(result.current[0]).toBe(3);

@@ -1,148 +1,198 @@
-import React, { forwardRef } from 'react';
+"use client"
 
-import { useVirtualization } from '@/hooks/use-optimization';
+import React, { useState, useRef, useCallback } from 'react';
+
+import { cn } from '@/lib/utils';
+
+interface VirtualItem {
+  index: number;
+  start: number;
+  end: number;
+  size: number;
+}
 
 interface VirtualizedListProps<T> {
   items: T[];
+  renderItem: (item: T, index: number) => React.ReactNode;
   itemHeight: number;
   containerHeight: number;
   overscan?: number;
-  renderItem: (item: T, index: number) => React.ReactNode;
   className?: string;
-  onScroll?: (scrollTop: number) => void;
-}
-
-/**
- * High-performance virtualized list component for large datasets
- */
-export function VirtualizedList<T>({
-  items,
-  itemHeight,
-  containerHeight,
-  overscan = 5,
-  renderItem,
-  className = '',
-  onScroll,
-}: VirtualizedListProps<T>): React.ReactElement {
-  const {
-    virtualItems,
-    totalSize,
-    containerRef,
-  } = useVirtualization(items, {
-    itemHeight,
-    containerHeight,
-    overscan,
-  });
-
-  const handleScroll = (event: React.UIEvent<HTMLDivElement>): void => {
-    onScroll?.(event.currentTarget.scrollTop);
-  };
-
-  return (
-    <div
-      ref={containerRef}
-      className={`overflow-auto ${className}`}
-      style={{ height: containerHeight }}
-      onScroll={handleScroll}
-    >
-      <div style={{ height: totalSize, position: 'relative' }}>
-        {virtualItems.map((virtualItem) => (
-          <div
-            key={virtualItem.index}
-            style={{
-              position: 'absolute',
-              top: virtualItem.start,
-              height: virtualItem.size,
-              width: '100%',
-            }}
-          >
-            {renderItem(items[virtualItem.index], virtualItem.index)}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  onEndReached?: () => void;
+  onEndReachedThreshold?: number;
+  hasMore?: boolean;
+  isLoading?: boolean;
 }
 
 interface VirtualizedGridProps<T> {
   items: T[];
+  renderItem: (item: T, index: number, row: number, col: number) => React.ReactNode;
   itemHeight: number;
   itemWidth: number;
   containerHeight: number;
   containerWidth: number;
   overscan?: number;
-  renderItem: (item: T, index: number) => React.ReactNode;
   className?: string;
 }
 
 /**
- * High-performance virtualized grid component
+ * Virtualized list component for performance optimization
+ * Renders only visible items to improve performance with large lists
+ */
+export function VirtualizedList<T>({
+  items,
+  renderItem,
+  itemHeight,
+  containerHeight,
+  overscan = 5,
+  className,
+  onEndReached,
+  onEndReachedThreshold = 0.8,
+  hasMore = false,
+  isLoading = false,
+}: VirtualizedListProps<T>): React.ReactElement {
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const totalHeight = items.length * itemHeight;
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+  const endIndex = Math.min(
+    items.length - 1,
+    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
+  );
+
+  const virtualItems: VirtualItem[] = [];
+  for (let i = startIndex; i <= endIndex; i++) {
+    virtualItems.push({
+      index: i,
+      start: i * itemHeight,
+      end: (i + 1) * itemHeight,
+      size: itemHeight,
+    });
+  }
+
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop: newScrollTop, scrollHeight, clientHeight } = event.currentTarget;
+    setScrollTop(newScrollTop);
+
+    // Check if we've reached the end
+    if (onEndReached && hasMore && !isLoading) {
+      const scrollPercentage = (newScrollTop + clientHeight) / scrollHeight;
+      if (scrollPercentage >= onEndReachedThreshold) {
+        onEndReached();
+      }
+    }
+  }, [onEndReached, hasMore, isLoading, onEndReachedThreshold]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={cn('overflow-auto', className)}
+      style={{ height: containerHeight }}
+      onScroll={handleScroll}
+    >
+      <div style={{ height: totalHeight, position: 'relative' }}>
+        {virtualItems.map((virtualItem) => {
+          const item = items[virtualItem.index];
+          if (item === null) return null;
+          
+          return (
+            <div
+              key={virtualItem.index}
+              style={{
+                position: 'absolute',
+                top: virtualItem.start,
+                height: virtualItem.size,
+                width: '100%',
+              }}
+            >
+              {renderItem(item as T, virtualItem.index)}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Virtualized grid component for performance optimization
+ * Renders only visible grid items to improve performance with large grids
  */
 export function VirtualizedGrid<T>({
   items,
+  renderItem,
   itemHeight,
   itemWidth,
   containerHeight,
   containerWidth,
   overscan = 5,
-  renderItem,
-  className = '',
+  className,
 }: VirtualizedGridProps<T>): React.ReactElement {
-  const itemsPerRow = Math.floor(containerWidth / itemWidth);
-  const totalRows = Math.ceil(items.length / itemsPerRow);
-  const totalHeight = totalRows * itemHeight;
+  const [scrollTop, setScrollTop] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const [scrollTop, setScrollTop] = React.useState(0);
+  const columnsPerRow = Math.floor(containerWidth / itemWidth);
+  const rows = Math.ceil(items.length / columnsPerRow);
+  const totalHeight = rows * itemHeight;
+  const totalWidth = columnsPerRow * itemWidth;
 
   const startRow = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
   const endRow = Math.min(
-    totalRows - 1,
+    rows - 1,
     Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
   );
 
-  const visibleItems = React.useMemo(() => {
-    const items: Array<{ item: T; index: number; row: number; col: number }> = [];
-    
-    for (let row = startRow; row <= endRow; row++) {
-      for (let col = 0; col < itemsPerRow; col++) {
-        const index = row * itemsPerRow + col;
-        if (index < items.length) {
-          items.push({
-            item: items[index],
-            index,
-            row,
-            col,
-          });
-        }
+  const startCol = Math.max(0, Math.floor(scrollLeft / itemWidth) - overscan);
+  const endCol = Math.min(
+    columnsPerRow - 1,
+    Math.ceil((scrollLeft + containerWidth) / itemWidth) + overscan
+  );
+
+  const visibleItems: Array<{ item: T; index: number; row: number; col: number }> = [];
+  
+  for (let row = startRow; row <= endRow; row++) {
+    for (let col = startCol; col <= endCol; col++) {
+      const index = row * columnsPerRow + col;
+      const item = items[index];
+      
+      if (item !== null) {
+        visibleItems.push({
+          item: item as T,
+          index,
+          row,
+          col,
+        });
       }
     }
-    
-    return items;
-  }, [items, startRow, endRow, itemsPerRow]);
+  }
 
-  const handleScroll = (event: React.UIEvent<HTMLDivElement>): void => {
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>): void => {
     setScrollTop(event.currentTarget.scrollTop);
-  };
+    setScrollLeft(event.currentTarget.scrollLeft);
+  }, []);
 
   return (
     <div
-      className={`overflow-auto ${className}`}
+      ref={containerRef}
+      className={cn('overflow-auto', className)}
       style={{ height: containerHeight, width: containerWidth }}
       onScroll={handleScroll}
     >
-      <div style={{ height: totalHeight, position: 'relative' }}>
+      <div style={{ height: totalHeight, width: totalWidth, position: 'relative' }}>
         {visibleItems.map(({ item, index, row, col }) => (
           <div
-            key={index}
+            key={`${row}-${col}`}
             style={{
               position: 'absolute',
               top: row * itemHeight,
               left: col * itemWidth,
-              height: itemHeight,
               width: itemWidth,
+              height: itemHeight,
             }}
           >
-            {renderItem(item, index)}
+            {renderItem(item, index, row, col)}
           </div>
         ))}
       </div>
@@ -150,72 +200,47 @@ export function VirtualizedGrid<T>({
   );
 }
 
-interface InfiniteScrollProps<T> {
-  items: T[];
-  hasMore: boolean;
-  isLoading: boolean;
-  onLoadMore: () => void;
-  threshold?: number;
-  renderItem: (item: T, index: number) => React.ReactNode;
-  renderLoading?: () => React.ReactNode;
-  className?: string;
-}
-
 /**
- * Infinite scroll component with performance optimizations
+ * Hook for managing virtualized list state
  */
-export function InfiniteScroll<T>({
-  items,
-  hasMore,
-  isLoading,
-  onLoadMore,
-  threshold = 100,
-  renderItem,
-  renderLoading,
-  className = '',
-}: InfiniteScrollProps<T>): React.ReactElement {
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const loadingRef = React.useRef<HTMLDivElement>(null);
+export function useVirtualizedList<T>(
+  items: T[],
+  itemHeight: number,
+  containerHeight: number,
+  overscan: number = 5
+): {
+  virtualItems: VirtualItem[];
+  totalHeight: number;
+  handleScroll: (event: React.UIEvent<HTMLDivElement>) => void;
+  scrollTop: number;
+} {
+  const [scrollTop, setScrollTop] = useState(0);
 
-  React.useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasMore && !isLoading) {
-          onLoadMore();
-        }
-      },
-      {
-        rootMargin: `${threshold}px`,
-      }
-    );
-
-    if (loadingRef.current) {
-      observer.observe(loadingRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasMore, isLoading, onLoadMore, threshold]);
-
-  return (
-    <div ref={containerRef} className={className}>
-      {items.map((item, index) => (
-        <div key={index}>
-          {renderItem(item, index)}
-        </div>
-      ))}
-      
-      {hasMore && (
-        <div ref={loadingRef}>
-          {isLoading && renderLoading ? (
-            renderLoading()
-          ) : (
-            <div className="p-4 text-center text-muted-foreground">
-              Loading more...
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+  const totalHeight = items.length * itemHeight;
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+  const endIndex = Math.min(
+    items.length - 1,
+    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
   );
+
+  const virtualItems: VirtualItem[] = [];
+  for (let i = startIndex; i <= endIndex; i++) {
+    virtualItems.push({
+      index: i,
+      start: i * itemHeight,
+      end: (i + 1) * itemHeight,
+      size: itemHeight,
+    });
+  }
+
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>): void => {
+    setScrollTop(event.currentTarget.scrollTop);
+  }, []);
+
+  return {
+    virtualItems,
+    totalHeight,
+    handleScroll,
+    scrollTop,
+  };
 }

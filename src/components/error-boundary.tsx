@@ -120,7 +120,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </CardTitle>
               <CardDescription>
                 We&apos;re sorry for the inconvenience. The application encountered an unexpected error.
-                {this.state.errorId && (
+                {this.state.errorId !== null && (
                   <span className="block mt-2 text-xs text-muted-foreground">
                     Error ID: {this.state.errorId}
                   </span>
@@ -128,12 +128,12 @@ export class ErrorBoundary extends Component<Props, State> {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {process.env.NODE_ENV === 'development' && this.state.error !== null && (
                 <div className="rounded-md bg-muted p-3">
                   <p className="text-sm font-mono text-muted-foreground">
                     {this.state.error.toString()}
                   </p>
-                  {this.state.errorInfo && (
+                  {this.state.errorInfo !== null && (
                     <pre className="mt-2 text-xs text-muted-foreground overflow-auto max-h-32">
                       {this.state.errorInfo.componentStack}
                     </pre>

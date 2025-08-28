@@ -1,10 +1,9 @@
-'use client';
+"use client"
 
-import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-import { useIntersectionObserverAdvanced } from '@/hooks/use-optimization';
-import { LoadingSpinner } from '@/components/ui/loading-states';
+import { cn } from '@/lib/utils';
 
 interface OptimizedImageProps {
   src: string;
@@ -14,231 +13,260 @@ interface OptimizedImageProps {
   className?: string;
   priority?: boolean;
   quality?: number;
-  placeholder?: 'blur' | 'empty';
-  blurDataURL?: string;
   sizes?: string;
   fill?: boolean;
   onLoad?: () => void;
   onError?: () => void;
-  fallbackSrc?: string;
+  placeholder?: 'blur' | 'empty';
+  blurDataURL?: string;
+}
+
+interface VirtualItem {
+  index: number;
+  start: number;
+  end: number;
+  size: number;
 }
 
 /**
- * Optimized image component with lazy loading and performance features
+ * Optimized image component with lazy loading, blur placeholder, and performance optimizations
+ * Provides progressive image loading with low-quality placeholders
  */
-export function OptimizedImage({
+export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   src,
   alt,
   width,
   height,
-  className = '',
+  className,
   priority = false,
   quality = 75,
-  placeholder = 'empty',
-  blurDataURL,
   sizes,
   fill = false,
   onLoad,
   onError,
-  fallbackSrc,
-}: OptimizedImageProps): React.ReactElement {
+  placeholder = 'blur',
+  blurDataURL,
+}) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState(src);
-  const [isInView, setIsInView] = useState(priority);
-  
-  const imageRef = useRef<HTMLImageElement>(null);
-  
-  const { ref: intersectionRef, isIntersecting } = useIntersectionObserverAdvanced({
-    threshold: 0.1,
-    rootMargin: '50px',
-  });
+  const intersectionRef = useRef<HTMLDivElement>(null);
 
-  // Handle intersection observer
+  // Intersection Observer for lazy loading
   useEffect(() => {
-    if (isIntersecting && !isInView) {
-      setIsInView(true);
-    }
-  }, [isIntersecting, isInView]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsInView(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        rootMargin: '50px',
+        threshold: 0.1,
+      }
+    );
 
-  // Handle error fallback
-  const handleError = (): void => {
-    if (fallbackSrc && currentSrc !== fallbackSrc) {
-      setCurrentSrc(fallbackSrc);
-      setHasError(false);
-    } else {
-      setHasError(true);
-      onError?.();
+    const currentRef = intersectionRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
     }
-  };
 
-  // Handle successful load
-  const handleLoad = (): void => {
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, []);
+
+  const handleLoad = useCallback(() => {
     setIsLoaded(true);
     onLoad?.();
-  };
+  }, [onLoad]);
 
-  // Combine refs
-  const combinedRef = (node: HTMLImageElement | null): void => {
-    intersectionRef(node);
-    imageRef.current = node;
-  };
+  const handleError = useCallback(() => {
+    setHasError(true);
+    onError?.();
+  }, [onError]);
+
+  // If priority is true, load immediately
+  const shouldLoad = priority || isInView;
 
   if (hasError) {
     return (
       <div
-        className={`flex items-center justify-center bg-muted text-muted-foreground ${className}`}
-        style={{ width, height }}
+        className={cn(
+          'flex items-center justify-center bg-muted text-muted-foreground',
+          className
+        )}
+        style={{
+          width: width !== null && width !== undefined ? `${width}px` : '100%',
+          height: height !== null && height !== undefined ? `${height}px` : '200px',
+        }}
       >
-        <div className="text-center">
-          <div className="text-2xl mb-2">🖼️</div>
-          <div className="text-sm">Image unavailable</div>
-        </div>
+        <span className="text-sm">Failed to load image</span>
       </div>
     );
   }
 
-  if (!isInView) {
+  if (!shouldLoad) {
     return (
       <div
-        className={`bg-muted animate-pulse ${className}`}
-        style={{ width, height }}
+        ref={intersectionRef}
+        className={cn(
+          'bg-muted animate-pulse',
+          className
+        )}
+        style={{
+          width: width !== null && width !== undefined ? `${width}px` : '100%',
+          height: height !== null && height !== undefined ? `${height}px` : '200px',
+        }}
       />
     );
   }
 
-  return (
-    <div className={`relative ${className}`}>
-      {/* Loading spinner */}
-      {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-          <LoadingSpinner size="sm" />
-        </div>
-      )}
-      
-      {/* Image */}
-      <Image
-        ref={combinedRef}
-        src={currentSrc}
-        alt={alt}
-        width={fill ? undefined : width}
-        height={fill ? undefined : height}
-        className={`transition-opacity duration-300 ${
-          isLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
-        priority={priority}
-        quality={quality}
-        placeholder={placeholder}
-        blurDataURL={blurDataURL}
-        sizes={sizes}
-        fill={fill}
-        onLoad={handleLoad}
-        onError={handleError}
-      />
-    </div>
-  );
-}
-
-interface ProgressiveImageProps {
-  src: string;
-  alt: string;
-  width?: number;
-  height?: number;
-  className?: string;
-  lowQualitySrc?: string;
-  onLoad?: () => void;
-}
-
-/**
- * Progressive image component that loads low quality first, then high quality
- */
-export function ProgressiveImage({
-  src,
-  alt,
-  width,
-  height,
-  className = '',
-  lowQualitySrc,
-  onLoad,
-}: ProgressiveImageProps): React.ReactElement {
-  const [isHighQualityLoaded, setIsHighQualityLoaded] = useState(false);
-  const [isLowQualityLoaded, setIsLowQualityLoaded] = useState(false);
-
-  const handleHighQualityLoad = (): void => {
-    setIsHighQualityLoaded(true);
-    onLoad?.();
-  };
-
-  const handleLowQualityLoad = (): void => {
-    setIsLowQualityLoaded(true);
-  };
-
-  return (
-    <div className={`relative ${className}`}>
-      {/* Low quality image (background) */}
-      {lowQualitySrc && (
+  if (fill) {
+    return (
+      <div className={cn('relative', className)}>
         <Image
-          src={lowQualitySrc}
+          src={src}
           alt={alt}
-          width={width}
-          height={height}
-          className={`absolute inset-0 transition-opacity duration-500 ${
-            isHighQualityLoaded ? 'opacity-0' : 'opacity-100'
-          }`}
+          fill
+          sizes={sizes !== null && sizes !== undefined ? sizes : '100vw'}
+          className={cn(
+            'object-cover transition-opacity duration-300',
+            isLoaded ? 'opacity-100' : 'opacity-0'
+          )}
+          quality={quality}
+          priority={priority}
+          onLoad={handleLoad}
+          onError={handleError}
+          placeholder={placeholder}
+          {...(blurDataURL !== null && blurDataURL !== undefined && { blurDataURL })}
+        />
+      </div>
+    );
+  }
+
+  // Ensure width and height are defined for non-fill images
+  if (width === null || height === null || width === 0 || height === 0 || Number.isNaN(width) || Number.isNaN(height)) {
+    console.warn('OptimizedImage: width and height are required when fill is false');
+    return null;
+  }
+
+  return (
+    <div className={cn('relative', className)}>
+            {/* Low quality placeholder */}
+      {placeholder === 'blur' && blurDataURL !== null && blurDataURL !== undefined && (
+        <Image
+          src={blurDataURL as string}
+          alt={alt}
+          width={width as number}
+          height={height as number}
+          className={cn(
+            'absolute inset-0 object-cover transition-opacity duration-300',
+            isLoaded ? 'opacity-0' : 'opacity-100'
+          )}
           quality={10}
-          onLoad={handleLowQualityLoad}
+          priority={false}
         />
       )}
-      
-      {/* High quality image */}
+
+      {/* Main image */}
       <Image
         src={src}
         alt={alt}
-        width={width}
-        height={height}
-        className={`transition-opacity duration-500 ${
-          isHighQualityLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
-        quality={90}
-        onLoad={handleHighQualityLoad}
+        width={width as number}
+        height={height as number}
+        className={cn(
+          'transition-opacity duration-300',
+          isLoaded ? 'opacity-100' : 'opacity-0'
+        )}
+        quality={quality}
+        priority={priority}
+        onLoad={handleLoad}
+        onError={handleError}
+        placeholder={placeholder}
+        {...(blurDataURL !== null && blurDataURL !== undefined && { blurDataURL })}
       />
     </div>
   );
-}
-
-interface ResponsiveImageProps {
-  src: string;
-  alt: string;
-  className?: string;
-  aspectRatio?: number;
-  sizes?: string;
-  onLoad?: () => void;
-}
+};
 
 /**
- * Responsive image component with automatic sizing
+ * Virtualized image list component for performance optimization
+ * Renders only visible images to improve performance with large lists
  */
-export function ResponsiveImage({
-  src,
-  alt,
-  className = '',
-  aspectRatio = 16 / 9,
-  sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
-  onLoad,
-}: ResponsiveImageProps): React.ReactElement {
+interface VirtualizedImageListProps<T> {
+  items: T[];
+  renderItem: (item: T, index: number) => React.ReactNode;
+  itemHeight: number;
+  containerHeight: number;
+  overscan?: number;
+}
+
+export function VirtualizedImageList<T>({
+  items,
+  renderItem,
+  itemHeight,
+  containerHeight,
+  overscan = 5,
+}: VirtualizedImageListProps<T>): React.ReactElement {
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const totalHeight = items.length * itemHeight;
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+  const endIndex = Math.min(
+    items.length - 1,
+    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
+  );
+
+  const virtualItems: VirtualItem[] = [];
+  for (let i = startIndex; i <= endIndex; i++) {
+    virtualItems.push({
+      index: i,
+      start: i * itemHeight,
+      end: (i + 1) * itemHeight,
+      size: itemHeight,
+    });
+  }
+
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>): void => {
+    setScrollTop(event.currentTarget.scrollTop);
+  }, []);
+
   return (
     <div
-      className={`relative ${className}`}
-      style={{ aspectRatio: aspectRatio.toString() }}
+      ref={containerRef}
+      className="overflow-auto"
+      style={{ height: containerHeight }}
+      onScroll={handleScroll}
     >
-      <OptimizedImage
-        src={src}
-        alt={alt}
-        fill
-        sizes={sizes}
-        className="object-cover"
-        onLoad={onLoad}
-      />
+      <div style={{ height: totalHeight, position: 'relative' }}>
+        {virtualItems.map((virtualItem) => {
+          const item = items[virtualItem.index];
+          if (item === null || item === undefined) return null;
+          
+          return (
+            <div
+              key={virtualItem.index}
+              style={{
+                position: 'absolute',
+                top: virtualItem.start,
+                height: virtualItem.size,
+                width: '100%',
+              }}
+            >
+              {renderItem(item, virtualItem.index)}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
+export default OptimizedImage;

@@ -1,41 +1,33 @@
 /**
- * Custom React Hooks
- * Collection of reusable hooks for common functionality
+ * Hooks index file
+ * Centralized exports for all custom hooks
  */
 
-// API hooks
-export { useApi, useApiMutation } from './use-api';
-
-// Utility hooks
-export { useDebounce } from './use-debounce';
+// API and data hooks
+export { useApi } from './use-api';
 export { useLocalStorage } from './use-local-storage';
-export { useClickOutside } from './use-click-outside';
-export { useIntersectionObserver, useLazyLoad } from './use-intersection-observer';
-
-// Media query hooks
-export {
-  useMediaQuery,
-  useIsMobile,
-  useIsTablet,
-  useIsDesktop,
-  useIsLargeDesktop,
-  usePrefersDarkMode,
-  usePrefersReducedMotion,
-  useIsPortrait,
-  useIsLandscape,
-} from './use-media-query';
 
 // Performance hooks
-export { usePerformance, useRenderPerformance, useApiPerformance } from './use-performance';
+export { 
+  usePerformanceMetrics, 
+  useApiPerformance, 
+  useMemoryMonitoring,
+  useInteractionTracking 
+} from './use-performance';
 
 // Optimization hooks
 export {
   useVirtualization,
-  useDebounceAdvanced,
-  useThrottle,
   useIntersectionObserverAdvanced,
+  useDebounce,
+  useThrottle,
   useMemoizedValue,
-  useCancellableOperation,
-  useShallowEqual,
-  useBatchedState,
+  useAbortableFetch,
+  useBatchState,
 } from './use-optimization';
+
+// Utility hooks
+export { useClickOutside } from './use-click-outside';
+export { useDebounce as useDebounceSimple } from './use-debounce';
+export { useIntersectionObserver } from './use-intersection-observer';
+export { useMediaQuery } from './use-media-query';

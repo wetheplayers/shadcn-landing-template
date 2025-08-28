@@ -216,7 +216,7 @@ export const useAuthStore = create<AuthStore>()(
               state.isAuthenticated = true;
               state.isLoading = false;
             });
-          } catch (error) {
+          } catch (_error) {
             get().logout();
             set((state) => {
               state.isLoading = false;

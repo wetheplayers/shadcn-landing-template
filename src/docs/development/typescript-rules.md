@@ -24,22 +24,22 @@ function process<T>(data: T): T { return data; }
   "compilerOptions": {
     // STRICT MODE - ALL MUST BE TRUE
     "strict": true,                           // Enable all strict type checking options
-    "noImplicitAny": true,                   // Error on expressions with implicit 'any'
-    "strictNullChecks": true,                // Enable strict null checks
-    "strictFunctionTypes": true,             // Enable strict checking of function types
-    "strictBindCallApply": true,             // Enable strict 'bind', 'call', and 'apply'
-    "strictPropertyInitialization": true,    // Enable strict property initialization
-    "noImplicitThis": true,                  // Error on 'this' expressions with implicit 'any'
-    "alwaysStrict": true,                   // Parse in strict mode and emit "use strict"
+    "noImplicitAny": true,                    // Error on expressions with implicit 'any'
+    "strictNullChecks": true,                 // Enable strict null checks
+    "strictFunctionTypes": true,              // Enable strict checking of function types
+    "strictBindCallApply": true,              // Enable strict 'bind', 'call', and 'apply'
+    "strictPropertyInitialization": true,     // Enable strict property initialization
+    "noImplicitThis": true,                   // Error on 'this' expressions with implicit 'any'
+    "alwaysStrict": true,                     // Parse in strict mode and emit "use strict"
     
     // ADDITIONAL SAFETY
-    "noUnusedLocals": true,                 // Report errors on unused locals
-    "noUnusedParameters": true,             // Report errors on unused parameters
-    "noImplicitReturns": true,              // Report error when not all paths return
-    "noFallthroughCasesInSwitch": true,    // Report errors for fallthrough cases
-    "noUncheckedIndexedAccess": true,      // Include 'undefined' in index signatures
-    "exactOptionalPropertyTypes": true,     // Differentiate between undefined and optional
-    "noImplicitOverride": true,             // Ensure 'override' modifier is used
+    "noUnusedLocals": true,                   // Report errors on unused locals
+    "noUnusedParameters": true,               // Report errors on unused parameters
+    "noImplicitReturns": true,                // Report error when not all paths return
+    "noFallthroughCasesInSwitch": true,       // Report errors for fallthrough cases
+    "noUncheckedIndexedAccess": true,         // Include 'undefined' in index signatures
+    "exactOptionalPropertyTypes": true,       // Differentiate between undefined and optional
+    "noImplicitOverride": true,               // Ensure 'override' modifier is used
     "noPropertyAccessFromIndexSignature": true, // Require indexed access for index signatures
     
     // MODULE SETTINGS

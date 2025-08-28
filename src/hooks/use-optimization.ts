@@ -1,12 +1,6 @@
-'use client';
+"use client"
 
-import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
-
-interface VirtualizationOptions {
-  itemHeight: number;
-  containerHeight: number;
-  overscan?: number;
-}
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 interface VirtualItem {
   index: number;
@@ -15,22 +9,56 @@ interface VirtualItem {
   size: number;
 }
 
-/**
- * Hook for virtualizing large lists to improve performance
- */
-export function useVirtualization<T>(
-  items: T[],
-  options: VirtualizationOptions
-): {
+interface VirtualizationOptions {
+  itemHeight: number;
+  containerHeight: number;
+  overscan?: number;
+}
+
+interface VirtualizationResult {
   virtualItems: VirtualItem[];
   totalSize: number;
   startIndex: number;
   endIndex: number;
   containerRef: React.RefObject<HTMLDivElement>;
-} {
+}
+
+interface IntersectionObserverOptions {
+  threshold?: number | number[];
+  rootMargin?: string;
+  root?: Element | null;
+}
+
+interface IntersectionObserverResult {
+  ref: React.RefObject<Element>;
+  isIntersecting: boolean;
+  intersectionRatio: number;
+  entry: IntersectionObserverEntry | null;
+}
+
+interface DebounceOptions {
+  delay: number;
+  leading?: boolean;
+  trailing?: boolean;
+}
+
+interface ThrottleOptions {
+  delay: number;
+  leading?: boolean;
+  trailing?: boolean;
+}
+
+/**
+ * Virtualization hook for performance optimization
+ * Calculates which items should be rendered based on scroll position
+ */
+export function useVirtualization<T>(
+  items: T[],
+  options: VirtualizationOptions
+): VirtualizationResult {
   const { itemHeight, containerHeight, overscan = 5 } = options;
-  const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const totalSize = items.length * itemHeight;
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
@@ -39,7 +67,7 @@ export function useVirtualization<T>(
     Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
   );
 
-  const virtualItems = useMemo(() => {
+  const virtualItems: VirtualItem[] = useMemo(() => {
     const items: VirtualItem[] = [];
     for (let i = startIndex; i <= endIndex; i++) {
       items.push({
@@ -59,9 +87,12 @@ export function useVirtualization<T>(
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
-      container.addEventListener('scroll', handleScroll as any);
-      return () => container.removeEventListener('scroll', handleScroll as any);
+      container.addEventListener('scroll', handleScroll as unknown as EventListener);
+      return () => {
+        container.removeEventListener('scroll', handleScroll as unknown as EventListener);
+      };
     }
+    return undefined;
   }, [handleScroll]);
 
   return {
@@ -69,144 +100,40 @@ export function useVirtualization<T>(
     totalSize,
     startIndex,
     endIndex,
-    containerRef,
+    containerRef: containerRef as React.RefObject<HTMLDivElement>,
   };
 }
 
-interface DebounceOptions {
-  delay: number;
-  leading?: boolean;
-  trailing?: boolean;
-}
-
 /**
- * Advanced debounce hook with leading/trailing options
- */
-export function useDebounceAdvanced<T extends (...args: any[]) => any>(
-  callback: T,
-  options: DebounceOptions
-): T {
-  const { delay, leading = false, trailing = true } = options;
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const lastCallTimeRef = useRef<number>(0);
-
-  return useCallback(
-    ((...args: Parameters<T>) => {
-      const now = Date.now();
-      const timeSinceLastCall = now - lastCallTimeRef.current;
-
-      // Clear existing timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      // Execute immediately if leading and enough time has passed
-      if (leading && timeSinceLastCall >= delay) {
-        lastCallTimeRef.current = now;
-        callback(...args);
-        return;
-      }
-
-      // Set timeout for trailing execution
-      if (trailing) {
-        timeoutRef.current = setTimeout(() => {
-          lastCallTimeRef.current = Date.now();
-          callback(...args);
-        }, delay);
-      }
-    }) as T,
-    [callback, delay, leading, trailing]
-  );
-}
-
-interface ThrottleOptions {
-  limit: number;
-  leading?: boolean;
-  trailing?: boolean;
-}
-
-/**
- * Throttle hook for limiting function execution frequency
- */
-export function useThrottle<T extends (...args: any[]) => any>(
-  callback: T,
-  options: ThrottleOptions
-): T {
-  const { limit, leading = true, trailing = true } = options;
-  const lastCallTimeRef = useRef<number>(0);
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const lastArgsRef = useRef<Parameters<T>>();
-
-  return useCallback(
-    ((...args: Parameters<T>) => {
-      const now = Date.now();
-      const timeSinceLastCall = now - lastCallTimeRef.current;
-
-      lastArgsRef.current = args;
-
-      // Execute immediately if leading and enough time has passed
-      if (leading && timeSinceLastCall >= limit) {
-        lastCallTimeRef.current = now;
-        callback(...args);
-        return;
-      }
-
-      // Set timeout for trailing execution if not already set
-      if (trailing && !timeoutRef.current) {
-        timeoutRef.current = setTimeout(() => {
-          if (lastArgsRef.current) {
-            lastCallTimeRef.current = Date.now();
-            callback(...lastArgsRef.current);
-            timeoutRef.current = undefined;
-          }
-        }, limit - timeSinceLastCall);
-      }
-    }) as T,
-    [callback, limit, leading, trailing]
-  );
-}
-
-interface IntersectionObserverOptions {
-  root?: Element | null;
-  rootMargin?: string;
-  threshold?: number | number[];
-}
-
-/**
- * Advanced intersection observer hook with performance optimizations
+ * Advanced intersection observer hook
+ * Provides detailed intersection information for performance optimization
  */
 export function useIntersectionObserverAdvanced(
   options: IntersectionObserverOptions = {}
-): {
-  ref: React.RefObject<Element>;
-  isIntersecting: boolean;
-  intersectionRatio: number;
-  entry: IntersectionObserverEntry | null;
-} {
-  const [state, setState] = useState({
-    isIntersecting: false,
-    intersectionRatio: 0,
-    entry: null as IntersectionObserverEntry | null,
-  });
-
-  const ref = useRef<Element>(null);
+): IntersectionObserverResult {
+  const { threshold = 0, rootMargin = '0px', root = null } = options;
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const [intersectionRatio, setIntersectionRatio] = useState(0);
+  const [entry, setEntry] = useState<IntersectionObserverEntry | null>(null);
+  const ref = useRef<Element | null>(null);
 
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        setState({
-          isIntersecting: entry.isIntersecting,
-          intersectionRatio: entry.intersectionRatio,
-          entry,
-        });
+      (entries) => {
+        const [firstEntry] = entries;
+        if (firstEntry) {
+          setIsIntersecting(firstEntry.isIntersecting);
+          setIntersectionRatio(firstEntry.intersectionRatio);
+          setEntry(firstEntry);
+        }
       },
       {
-        root: options.root || null,
-        rootMargin: options.rootMargin || '0px',
-        threshold: options.threshold || 0,
+        threshold,
+        rootMargin,
+        root,
       }
     );
 
@@ -214,76 +141,179 @@ export function useIntersectionObserverAdvanced(
 
     return () => {
       observer.unobserve(element);
-      observer.disconnect();
     };
-  }, [options.root, options.rootMargin, options.threshold]);
+  }, [threshold, rootMargin, root]);
 
   return {
-    ref,
-    ...state,
+    ref: ref as React.RefObject<Element>,
+    isIntersecting,
+    intersectionRatio,
+    entry,
   };
 }
 
 /**
- * Hook for optimizing expensive calculations with memoization
+ * Debounce hook for performance optimization
+ * Delays function execution until after a specified delay
  */
-export function useMemoizedValue<T>(
-  factory: () => T,
-  dependencies: React.DependencyList,
-  equalityFn?: (prev: T, next: T) => boolean
+export function useDebounce<T extends (...args: unknown[]) => unknown>(
+  callback: T,
+  delay: number,
+  options: Omit<DebounceOptions, 'delay'> = {}
 ): T {
-  const prevValueRef = useRef<T>();
-  const prevDepsRef = useRef<React.DependencyList>();
+  const { leading = false, trailing = true } = options;
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const lastArgsRef = useRef<Parameters<T> | undefined>(undefined);
 
-  return useMemo(() => {
-    const newValue = factory();
-    
-    // Use custom equality function if provided
-    if (equalityFn && prevValueRef.current !== undefined) {
-      if (equalityFn(prevValueRef.current, newValue)) {
-        return prevValueRef.current;
+  const debouncedCallback = useCallback(
+    (...args: Parameters<T>) => {
+      lastArgsRef.current = args;
+
+      if (leading && !timeoutRef.current) {
+        callback(...args);
       }
-    }
-    
-    prevValueRef.current = newValue;
-    prevDepsRef.current = dependencies;
-    
-    return newValue;
-  }, dependencies);
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        if (trailing && lastArgsRef.current) {
+          callback(...lastArgsRef.current);
+        }
+        timeoutRef.current = undefined;
+        lastArgsRef.current = undefined;
+      }, delay);
+    },
+    [callback, delay, leading, trailing]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return debouncedCallback as T;
 }
 
 /**
- * Hook for managing expensive operations with cancellation
+ * Throttle hook for performance optimization
+ * Limits function execution to a maximum frequency
  */
-export function useCancellableOperation<T>() {
-  const abortControllerRef = useRef<AbortController>();
+export function useThrottle<T extends (...args: unknown[]) => unknown>(
+  callback: T,
+  delay: number,
+  options: Omit<ThrottleOptions, 'delay'> = {}
+): T {
+  const { leading = true, trailing = true } = options;
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const lastArgsRef = useRef<Parameters<T> | undefined>(undefined);
+  const lastCallTimeRef = useRef(0);
 
-  const execute = useCallback(async (
-    operation: (signal: AbortSignal) => Promise<T>
-  ): Promise<T | null> => {
-    // Cancel previous operation
+  const throttledCallback = useCallback(
+    (...args: Parameters<T>) => {
+      const now = Date.now();
+      const timeSinceLastCall = now - lastCallTimeRef.current;
+
+      if (timeSinceLastCall >= delay) {
+        if (leading) {
+          callback(...args);
+          lastCallTimeRef.current = now;
+        }
+      } else {
+        lastArgsRef.current = args;
+
+        if (trailing && !timeoutRef.current) {
+          timeoutRef.current = setTimeout(() => {
+            if (lastArgsRef.current) {
+              callback(...lastArgsRef.current);
+              lastCallTimeRef.current = Date.now();
+            }
+            timeoutRef.current = undefined;
+            lastArgsRef.current = undefined;
+          }, delay - timeSinceLastCall);
+        }
+      }
+    },
+    [callback, delay, leading, trailing]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return throttledCallback as T;
+}
+
+/**
+ * Memoization hook for expensive calculations
+ * Caches results based on dependencies
+ */
+export function useMemoizedValue<T>(
+  factory: () => T,
+  deps: React.DependencyList
+): T {
+  return useMemo(() => factory(), deps);
+}
+
+/**
+ * Abortable fetch hook for API calls
+ * Automatically cancels requests when component unmounts or dependencies change
+ */
+export function useAbortableFetch<T>(
+  url: string,
+  options: RequestInit = {}
+): {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+} {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | undefined>(undefined);
+
+  const fetchData = useCallback(async () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    // Create new abort controller
     abortControllerRef.current = new AbortController();
+    setLoading(true);
+    setError(null);
 
     try {
-      return await operation(abortControllerRef.current.signal);
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        return null; // Operation was cancelled
-      }
-      throw error;
-    }
-  }, []);
+      const response = await fetch(url, {
+        ...options,
+        signal: abortControllerRef.current.signal,
+      });
 
-  const cancel = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json() as T;
+      setData(result);
+    } catch (err) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [url, options]);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   useEffect(() => {
     return () => {
@@ -293,40 +323,39 @@ export function useCancellableOperation<T>() {
     };
   }, []);
 
-  return { execute, cancel };
+  return {
+    data,
+    loading,
+    error,
+    refetch: fetchData,
+  };
 }
 
 /**
- * Hook for optimizing re-renders with shallow comparison
+ * Batch state updates hook for performance optimization
+ * Batches multiple state updates into a single render cycle
  */
-export function useShallowEqual<T>(value: T): T {
-  const ref = useRef<T>(value);
-  
-  if (!Object.is(ref.current, value)) {
-    ref.current = value;
-  }
-  
-  return ref.current;
-}
-
-/**
- * Hook for batching state updates to reduce re-renders
- */
-export function useBatchedState<T>(initialState: T) {
+export function useBatchState<T>(
+  initialState: T
+): [T, (updater: T | ((prev: T) => T)) => void] {
   const [state, setState] = useState<T>(initialState);
   const batchRef = useRef<T[]>([]);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  const batchedSetState = useCallback((updater: T | ((prev: T) => T)) => {
-    batchRef.current.push(typeof updater === 'function' ? (updater as (prev: T) => T)(state) : updater);
-    
+  const batchSetState = useCallback((updater: T | ((prev: T) => T)) => {
+    const newValue = typeof updater === 'function' ? (updater as (prev: T) => T)(state) : updater;
+    batchRef.current.push(newValue);
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+
     timeoutRef.current = setTimeout(() => {
       if (batchRef.current.length > 0) {
-        setState(batchRef.current[batchRef.current.length - 1]);
+        const lastValue = batchRef.current[batchRef.current.length - 1];
+        if (lastValue !== null && lastValue !== undefined) {
+          setState(lastValue);
+        }
         batchRef.current = [];
       }
     }, 0);
@@ -340,5 +369,5 @@ export function useBatchedState<T>(initialState: T) {
     };
   }, []);
 
-  return [state, batchedSetState] as const;
+  return [state, batchSetState];
 }

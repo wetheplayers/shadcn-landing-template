@@ -1,92 +1,72 @@
-# TypeScript Documentation
+# Documentation
 
-## Overview
+Welcome to the comprehensive documentation for this Next.js application. This documentation is organized into logical sections to help you find the information you need quickly.
 
-This documentation folder contains comprehensive rules and guidelines for writing strict TypeScript code in this project. The rules are designed to be easily digestible by both developers and Large Language Models (LLMs).
+## 📚 Documentation Structure
 
-## Key Documents
+### 🚀 Getting Started
+- **[Quick Start Guide](./getting-started/README.md)** - Get up and running in minutes
+- **[Project Setup](./getting-started/setup.md)** - Detailed setup instructions
 
-### 1. [TypeScript Rules](./typescript-rules.md)
-A comprehensive guide that enforces strict TypeScript and ensures best practices at all times. This document covers:
+### 🛠️ Development
+- **[TypeScript Rules](./development/typescript-rules.md)** - Strict TypeScript guidelines and best practices
+- **[ESLint Configuration](./development/eslint-config.md)** - Code quality and linting rules
+- **[Testing Guide](./development/testing.md)** - Testing strategies and examples
 
-- **Core Principles**: Mandatory TypeScript usage, no JavaScript allowed
-- **Compiler Configuration**: Required tsconfig.json settings for maximum type safety
-- **Type System Best Practices**: No 'any' types, strict null checking, exact optional properties
-- **Interface and Type Definitions**: When to use interfaces vs type aliases
-- **Function Best Practices**: Explicit return types, strict function types
-- **Class Best Practices**: Strict property initialization, access modifiers
-- **Type Guards and Narrowing**: Custom type guards, discriminated unions
-- **Module System**: Import type syntax, module augmentation
-- **Error Handling**: Never ignore errors, proper error boundaries
-- **Testing Considerations**: Type-safe mocks and test utilities
-- **Utility Types**: Essential built-in TypeScript utilities
-- **Anti-Patterns to Avoid**: Common mistakes and how to avoid them
+### 🏗️ Architecture
+- **[Implementation Guide](./architecture/implementation-guide.md)** - Comprehensive feature overview
+- **[Performance Optimization](./architecture/performance.md)** - Performance best practices and tools
+- **[State Management](./architecture/state-management.md)** - Zustand stores and patterns
 
-### 2. [ESLint TypeScript Rules](./eslint-typescript-rules.md)
-Comprehensive ESLint configuration that enforces strict TypeScript best practices, fully aligned with the TypeScript compiler settings.
+### 📖 API Reference
+- **[Component Library](./api/components.md)** - UI component documentation
+- **[Hooks Reference](./api/hooks.md)** - Custom React hooks
+- **[Services](./api/services.md)** - API service layer
 
-### 3. [Getting Started](./getting-started.md)
-Initial setup guide for the project.
+## 🎯 Quick Navigation
 
-## Quick Reference
+### For New Developers
+1. Start with [Quick Start Guide](./getting-started/README.md)
+2. Review [TypeScript Rules](./development/typescript-rules.md)
+3. Explore [Implementation Guide](./architecture/implementation-guide.md)
 
-### TypeScript Compiler Options
+### For Experienced Developers
+1. Check [Performance Optimization](./architecture/performance.md)
+2. Review [ESLint Configuration](./development/eslint-config.md)
+3. Reference [API Documentation](./api/)
 
-The project uses the strictest possible TypeScript configuration:
+### For Project Maintenance
+1. Follow [TypeScript Rules](./development/typescript-rules.md)
+2. Monitor [Performance Guidelines](./architecture/performance.md)
+3. Update [Implementation Guide](./architecture/implementation-guide.md)
 
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true
-  }
-}
-```
+## 🔧 Key Features
 
-### Key Rules
+- **Strict TypeScript** - Zero runtime type errors
+- **Performance Optimized** - Core Web Vitals monitoring
+- **Testing Ready** - Comprehensive test setup
+- **Production Ready** - Docker deployment and CI/CD
+- **Accessibility First** - WCAG compliant components
+- **SEO Optimized** - Metadata and structured data
 
-1. **NO JavaScript** - Only TypeScript (.ts/.tsx) files allowed
-2. **NO any types** - Use proper types, generics, or 'unknown'
-3. **Explicit return types** - All functions must declare return types
-4. **Handle null/undefined** - Proper null checking required
-5. **Type imports** - Use `import type` for type-only imports
-6. **Error handling** - Never silently fail, always handle errors
-7. **Immutability** - Prefer readonly properties and const assertions
+## 📝 Contributing to Documentation
 
-## For LLMs
+When updating documentation:
 
-When generating code for this project:
+1. **Keep it current** - Update docs when changing code
+2. **Be specific** - Include code examples and explanations
+3. **Follow structure** - Place content in appropriate sections
+4. **Test examples** - Ensure all code examples work
+5. **Update index** - Keep this README current
 
-1. **ALWAYS** enable all strict TypeScript options
-2. **NEVER** use `any` type
-3. **ALWAYS** provide explicit return types
-4. **ALWAYS** handle null/undefined cases
-5. **PREFER** immutability with `readonly`
-6. **USE** discriminated unions for state
-7. **IMPLEMENT** proper error boundaries
-8. **VALIDATE** external data with type guards
-9. **DOCUMENT** complex types with JSDoc
-10. **TEST** with type-safe mocks
+## 🚨 Important Notes
 
-## Enforcement
+- All code must follow [TypeScript Rules](./development/typescript-rules.md)
+- Performance budgets are enforced - see [Performance Guide](./architecture/performance.md)
+- ESLint rules are strict - see [ESLint Configuration](./development/eslint-config.md)
 
-The TypeScript compiler is configured to enforce these rules at compile time. Any violation will result in a compilation error, preventing the code from building.
+---
 
-## Updates
+**Last Updated**: {{ new Date().toLocaleDateString('en-GB') }}
 
-This documentation should be updated whenever:
-- New TypeScript best practices emerge
-- Project-specific patterns are established
-- Common issues are identified and solutions documented
-
-Last updated: {{ Date.now() }} 
+For questions or suggestions, please refer to the project's issue tracker. 

@@ -45,7 +45,8 @@ describe('useApi', () => {
       ok: false,
       status: 404,
       statusText: 'Not Found',
-    });
+      json: async () => ({ success: false, message: 'Not Found' }),
+    } as Response);
 
     const { result } = renderHook(() => useApi('/api/test'));
 
@@ -61,7 +62,7 @@ describe('useApi', () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: false, message: 'API Error' }),
-    });
+    } as Response);
 
     const { result } = renderHook(() => useApi('/api/test'));
 
@@ -80,7 +81,7 @@ describe('useApi', () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true, data: mockData }),
-    });
+    } as Response);
 
     renderHook(() => useApi('/api/test', { onSuccess }));
 
@@ -96,7 +97,7 @@ describe('useApi', () => {
       ok: false,
       status: 500,
       statusText: 'Internal Server Error',
-    });
+    } as Response);
 
     renderHook(() => useApi('/api/test', { onError }));
 
@@ -109,7 +110,7 @@ describe('useApi', () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true, data: {} }),
-    });
+    } as Response);
 
     renderHook(() => useApi('/api/test', { immediate: false }));
 
@@ -121,7 +122,7 @@ describe('useApi', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, data: mockData }),
-    });
+    } as Response);
 
     const { result } = renderHook(() => useApi('/api/test'));
 
